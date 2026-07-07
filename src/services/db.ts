@@ -26,367 +26,64 @@ import { supabase, isSupabaseConfigured } from './supabaseClient';
 // Production schema removed — kept seed data only.
 const INITIAL_TENANTS: Tenant[] = [
   {
-    id: 't1',
-    nameAr: 'شاورما وجريل الفاخر',
-    nameEn: 'Shawarma & Grill Premium',
-    logoUrl: '🍔',
-    email: 'info@shawarmagrill.com',
-    phone: '920005432',
-    address: 'شارع التحلية، الرياض، المملكة العربية السعودية',
-    currencyAr: 'ر.س',
-    currencyEn: 'SAR',
+    id: "a0000000-0000-0000-0000-000000000001",
+    nameAr: "المنصة الرئيسية",
+    nameEn: "Main Platform",
+    email: "synasma9@gmail.com",
+    phone: "0500000000",
+    address: "الرياض، المملكة العربية السعودية",
+    currencyAr: "ر.س",
+    currencyEn: "SAR",
     taxPercent: 15.0,
     servicePercent: 0.0,
-    status: 'active',
-    subscriptionPlan: 'pro',
-    createdAt: '2026-01-10T12:00:00Z',
-  },
-  {
-    id: 't2',
-    nameAr: 'قصر الضيافة الشرقية',
-    nameEn: 'Eastern Hospitality Palace',
-    logoUrl: '🕌',
-    email: 'contact@easternpalace.sa',
-    phone: '920008877',
-    address: 'طريق الأمير محمد بن عبدالعزيز، جدة، المملكة العربية السعودية',
-    currencyAr: 'ر.س',
-    currencyEn: 'SAR',
-    taxPercent: 15.0,
-    servicePercent: 5.0, // Hospitality fine dining service fee
-    status: 'active',
-    subscriptionPlan: 'enterprise',
-    createdAt: '2026-02-15T12:00:00Z',
+    status: "active",
+    subscriptionPlan: "enterprise",
+    createdAt: new Date().toISOString(),
   },
 ];
 
 const INITIAL_BRANCHES: Branch[] = [
-  // Tenant 1
-  { id: 'b1_1', tenantId: 't1', nameAr: 'فرع السليمانية - الرياض', nameEn: 'Al-Sulaimania Branch - Riyadh', city: 'Riyadh', address: 'طريق الملك عبدالعزيز، حي السليمانية', phone: '0112445566', status: 'active' },
-  { id: 'b1_2', tenantId: 't1', nameAr: 'فرع الحزام الذهبي - الخبر', nameEn: 'Golden Belt Branch - Khobar', city: 'Khobar', address: 'طريق الأمير فيصل بن فهد', phone: '0138992211', status: 'active' },
-  // Tenant 2
-  { id: 'b2_1', tenantId: 't2', nameAr: 'الفرع الرئيسي - جدة', nameEn: 'Main Branch - Jeddah', city: 'Jeddah', address: 'شارع الأندلس، الحمراء', phone: '0126554433', status: 'active' },
-];
-
-const INITIAL_HALLS: Hall[] = [
-  // Branch 1_1
-  { id: 'h1_1_main', branchId: 'b1_1', nameAr: 'الصالة الرئيسية', nameEn: 'Main Hall' },
-  { id: 'h1_1_family', branchId: 'b1_1', nameAr: 'صالة العائلات', nameEn: 'Family Section' },
-  { id: 'h1_1_outdoor', branchId: 'b1_1', nameAr: 'الجلسات الخارجية', nameEn: 'Outdoor Terrace' },
-  // Branch 2_1
-  { id: 'h2_1_royal', branchId: 'b2_1', nameAr: 'القاعة الملكية VIP', nameEn: 'Royal VIP Suite' },
-  { id: 'h2_1_garden', branchId: 'b2_1', nameAr: 'جلسات النافورة والحديقة', nameEn: 'Fountain Garden' },
-];
-
-const INITIAL_TABLES: Table[] = [
-  // Branch 1_1, Hall Main
-  { id: 'tbl_1_1', hallId: 'h1_1_main', number: '101', seats: 2, status: 'free', qrCodeValue: 'qr_tbl_1_1' },
-  { id: 'tbl_1_2', hallId: 'h1_1_main', number: '102', seats: 4, status: 'busy', qrCodeValue: 'qr_tbl_1_2' },
-  { id: 'tbl_1_3', hallId: 'h1_1_main', number: '103', seats: 4, status: 'reserved', qrCodeValue: 'qr_tbl_1_3' },
-  { id: 'tbl_1_4', hallId: 'h1_1_main', number: '104', seats: 6, status: 'cleaning', qrCodeValue: 'qr_tbl_1_4' },
-  { id: 'tbl_1_5', hallId: 'h1_1_main', number: '105', seats: 8, status: 'free', qrCodeValue: 'qr_tbl_1_5' },
-
-  // Branch 1_1, Family
-  { id: 'tbl_1_10', hallId: 'h1_1_family', number: 'F1', seats: 6, status: 'free', qrCodeValue: 'qr_tbl_1_10' },
-  { id: 'tbl_1_11', hallId: 'h1_1_family', number: 'F2', seats: 4, status: 'busy', qrCodeValue: 'qr_tbl_1_11' },
-  { id: 'tbl_1_12', hallId: 'h1_1_family', number: 'F3', seats: 8, status: 'free', qrCodeValue: 'qr_tbl_1_12' },
-
-  // Branch 2_1, Royal
-  { id: 'tbl_2_1', hallId: 'h2_1_royal', number: 'R-1', seats: 12, status: 'busy', qrCodeValue: 'qr_tbl_2_1' },
-  { id: 'tbl_2_2', hallId: 'h2_1_royal', number: 'R-2', seats: 8, status: 'free', qrCodeValue: 'qr_tbl_2_2' },
-  // Branch 2_1, Garden
-  { id: 'tbl_2_10', hallId: 'h2_1_garden', number: 'G1', seats: 4, status: 'free', qrCodeValue: 'qr_tbl_2_10' },
-];
-
-const INITIAL_CATEGORIES: Category[] = [
-  // Tenant 1
-  { id: 'c1_burgers', tenantId: 't1', nameAr: 'شاورما وبيرجر', nameEn: 'Shawarma & Burgers', icon: 'Flame', isActive: true },
-  { id: 'c1_pizza', tenantId: 't1', nameAr: 'بيتزا نابولي', nameEn: 'Napoli Pizza', icon: 'Pizza', isActive: true },
-  { id: 'c1_sides', tenantId: 't1', nameAr: 'المقبلات والجوانب', nameEn: 'Sides & Appetizers', icon: 'Layers', isActive: true },
-  { id: 'c1_drinks', tenantId: 't1', nameAr: 'المشروبات الباردة', nameEn: 'Cold Drinks', icon: 'CupSoda', isActive: true },
-
-  // Tenant 2
-  { id: 'c2_oriental', tenantId: 't2', nameAr: 'المشويات الشرقية واللحوم', nameEn: 'Oriental Grills & Meat', icon: 'Flame', isActive: true },
-  { id: 'c2_appetizer', tenantId: 't2', nameAr: 'المازات والمغمسات', nameEn: 'Mezze & Appetizers', icon: 'Salad', isActive: true },
-  { id: 'c2_traditional', tenantId: 't2', nameAr: 'الأكلات الشعبية والكبسة', nameEn: 'Traditional Rice & Kabsa', icon: 'Beef', isActive: true },
-  { id: 'c2_drinks', tenantId: 't2', nameAr: 'الكوكتيلات والعصائر الفريش', nameEn: 'Cocktails & Fresh Juices', icon: 'Grape', isActive: true },
-];
-
-const INITIAL_INGREDIENTS: Ingredient[] = [
-  // Tenant 1 (Burger/Pizza Ingredients for deduction test)
-  { id: 'ing1_cheese', tenantId: 't1', nameAr: 'جبنة موزاريلا بلدي', nameEn: 'Mozzarella Cheese', stock: 45.5, minStock: 10.0, unitAr: 'كيلو', unitEn: 'kg', costPerUnit: 25.0, supplierId: 'sup1_1' },
-  { id: 'ing1_beef', tenantId: 't1', nameAr: 'لحم بقري مفروم ممتاز', nameEn: 'Ground Premium Beef', stock: 85.0, minStock: 15.0, unitAr: 'كيلو', unitEn: 'kg', costPerUnit: 35.0, supplierId: 'sup1_2' },
-  { id: 'ing1_chicken', tenantId: 't1', nameAr: 'صدور دجاج متبلة شاورما', nameEn: 'Marinated Chicken Breast', stock: 120.0, minStock: 20.0, unitAr: 'كيلو', unitEn: 'kg', costPerUnit: 18.0, supplierId: 'sup1_2' },
-  { id: 'ing1_flour', tenantId: 't1', nameAr: 'طحين أبيض فاخر (مخابز)', nameEn: 'Premium White Flour', stock: 250.0, minStock: 50.0, unitAr: 'كيلو', unitEn: 'kg', costPerUnit: 3.50, supplierId: 'sup1_1' },
-  { id: 'ing1_tomato_sauce', tenantId: 't1', nameAr: 'صلصة طماطم سرية للبيتزا', nameEn: 'Craft Pizza Tomato Sauce', stock: 60.0, minStock: 12.0, unitAr: 'لتر', unitEn: 'liter', costPerUnit: 8.0, supplierId: 'sup1_1' },
-  { id: 'ing1_potato', tenantId: 't1', nameAr: 'أصابع بطاطس بلجيكية حبات', nameEn: 'Fries Potatoes Belgian', stock: 150.0, minStock: 30.0, unitAr: 'كيلو', unitEn: 'kg', costPerUnit: 6.0, supplierId: 'sup1_1' },
-
-  // Tenant 2
-  { id: 'ing2_rice', tenantId: 't2', nameAr: 'أرز بسمتي هندي عنبر', nameEn: 'Indian Basmati Amber Rice', stock: 500.0, minStock: 80.0, unitAr: 'كيلو', unitEn: 'kg', costPerUnit: 9.0, supplierId: 'sup2_1' },
-  { id: 'ing2_lamb', tenantId: 't2', nameAr: 'لحوم غنم حرشية طازجة', nameEn: 'Fresh Lamb Meat', stock: 95.0, minStock: 15.0, unitAr: 'كيلو', unitEn: 'kg', costPerUnit: 48.0, supplierId: 'sup2_2' },
-];
-
-const INITIAL_SUPPLIERS: Supplier[] = [
-  // Tenant 1
-  { id: 'sup1_1', tenantId: 't1', name: 'الشركة الشاملة لتوزيع الأغذية', contactPerson: 'أبو أحمد', phone: '0599111222', email: 'orders@shamel-food.sa', address: 'المنطقة الصناعية، الرياض' },
-  { id: 'sup1_2', tenantId: 't1', name: 'مزارع كافية الطازجة للحوم والدواجن', contactPerson: 'م. تركي القحطاني', phone: '0502233445', email: 'turki@kafiafarms.sa', address: 'الخرج، منطقة الرياض' },
-  // Tenant 2
-  { id: 'sup2_1', tenantId: 't2', name: 'شركة رواء للمواد التموينية والأرز', contactPerson: 'سليم شاهين', phone: '0555432109', email: 'salim@rewaa-rice.com', address: 'ميناء جدة الإسلامي، جدة' },
-  { id: 'sup2_2', tenantId: 't2', name: 'مسالخ نجد الحديثة', contactPerson: 'عبدالعزيز الحميد', phone: '0566778899', email: 'hamid@najd-slaughters.com', address: 'جنوب جدة، حي الصفاء' },
-];
-
-const INITIAL_MENU_ITEMS: MenuItem[] = [
-  // Tenant 1: Burgers & Shawarma (c1_burgers)
   {
-    id: 'm1_burger_beef',
-    categoryId: 'c1_burgers',
-    nameAr: 'برو برجر كلاسيك دبل بقري',
-    nameEn: 'Double Pro-Burger Beef Classic',
-    descriptionAr: 'شريحتان من اللحم البلدي الطازج المشوي على اللهب، جبنة هولندية، خبز البطاطس الطري، صوص كلاسيكي خاص',
-    descriptionEn: 'Two freshly flame-grilled premium beef patties, real Dutch melted cheese, soft brioche potato bun, and our signature sauce.',
-    price: 32.0,
-    imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&auto=format&fit=crop&q=80',
-    ingredients: [
-      { ingredientId: 'ing1_beef', quantityNeeded: 0.22 }, // 220g Beef
-      { ingredientId: 'ing1_cheese', quantityNeeded: 0.04 }, // 40g Cheese
-    ],
-    isAvailable: true,
-    extras: [
-      { nameAr: 'شريحة جبن إضافية', nameEn: 'Extra Cheese Slice', price: 3.5 },
-      { nameAr: 'شريحة لحم بقري (بفتيك)', nameEn: 'Extra Beef Patty', price: 9.0 },
-      { nameAr: 'مخلل هلابينو حار', nameEn: 'Spicy Jalapeno', price: 2.0 },
-    ],
-  },
-  {
-    id: 'm1_shawarma_chicken',
-    categoryId: 'c1_burgers',
-    nameAr: 'شاورما الدجاج العربي الفاخر',
-    nameEn: 'Premium Arabic Chicken Shawarma',
-    descriptionAr: 'شاورما دجاج متبل على الطريقة الأصلية، صوص الثوم المبتكر، مخلل مقرمش وبطاطس أصابع ملفوف بخبز الصاج المحمص',
-    descriptionEn: 'Traditional seasoned cut chicken shawarma, garlic cream aioli, crisp pickles, wrapped in golden-toasted saj bread.',
-    price: 18.0,
-    imageUrl: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=400&auto=format&fit=crop&q=80',
-    ingredients: [
-      { ingredientId: 'ing1_chicken', quantityNeeded: 0.15 }, // 150g Chicken
-      { ingredientId: 'ing1_potato', quantityNeeded: 0.05 }, // 50g Potato
-    ],
-    isAvailable: true,
-    extras: [
-      { nameAr: 'زيادة ثومية دبل', nameEn: 'Double Garlic Sauce', price: 1.5 },
-      { nameAr: 'إضافة جبنة موزاريلًا ذايبة', nameEn: 'Melted Mozzarella Inside', price: 3.0 },
-    ],
-  },
-
-  // Tenant 1: Pizzas (c1_pizza)
-  {
-    id: 'm1_pizza_marg',
-    categoryId: 'c1_pizza',
-    nameAr: 'بيتزا مارغريتا نابولي الأصلية',
-    nameEn: 'Original Napoli Margherita Pizza',
-    descriptionAr: 'عجين نابولي المخمر لمدة ٤٨ ساعة، صلصة طماطم سان مارزانو، موزاريلا بلدي من قشطة الحليب، أوراق ريحان فريش، زيت زيتون بكر',
-    descriptionEn: '48-hours fermented dough, rich San Marzano tomato base, direct cow milk mozzarella, fresh basil, and extra virgin olive oil.',
-    price: 36.0,
-    imageUrl: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400&auto=format&fit=crop&q=80',
-    ingredients: [
-      { ingredientId: 'ing1_flour', quantityNeeded: 0.18 }, // 180g Flour
-      { ingredientId: 'ing1_tomato_sauce', quantityNeeded: 0.12 }, // 120ml Tomato sauce
-      { ingredientId: 'ing1_cheese', quantityNeeded: 0.14 }, // 140g Mozzarella cheese
-    ],
-    isAvailable: true,
-    extras: [
-      { nameAr: 'أطراف محشية بالجبن', nameEn: 'Cheese Stuffed Crust', price: 6.0 },
-      { nameAr: 'فطر فريش بري', nameEn: 'Wild Fresh Mushroom', price: 4.0 },
-    ],
-  },
-
-  // Tenant 1: Sides (c1_sides)
-  {
-    id: 'm1_fries_classic',
-    categoryId: 'c1_sides',
-    nameAr: 'بطاطس بلجيكية مبهرة مقرمشة',
-    nameEn: 'Crispi Belgian Fries Seasoned',
-    descriptionAr: 'أصابع بطاطس مقلية ذهبية مبهرة بهارات تكساس الخاصة، تقدم مع صوص الكوكتيل المجاني',
-    descriptionEn: 'Crispy fried golden Belgian potatoes, sprinkled with our unique Texas seasoning. Served with cocktail sauce.',
-    price: 10.0,
-    imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&auto=format&fit=crop&q=80',
-    ingredients: [
-      { ingredientId: 'ing1_potato', quantityNeeded: 0.22 }, // 220g Potatoes
-    ],
-    isAvailable: true,
-    extras: [
-      { nameAr: 'سوس الجبنة الشيدر السائل', nameEn: 'Liquid Cheddar Cheese Sauce', price: 3.0 },
-    ],
-  },
-
-  // Tenant 1: Drinks (c1_drinks)
-  {
-    id: 'm1_cola',
-    categoryId: 'c1_drinks',
-    nameAr: 'كولا بارد بالثلج والليمون',
-    nameEn: 'Cold Cola with Lime & Ice',
-    descriptionAr: 'علبة بيبسي كولا باردة ومنعشة تقدم مع كاس ثلج وشريحة ليمون منعشة',
-    descriptionEn: 'Chilled Pepsi Cola can served with a splash of fresh lemon and crushed frozen ice.',
-    price: 5.5,
-    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400&auto=format&fit=crop&q=80',
-    ingredients: [],
-    isAvailable: true,
-    extras: [],
-  },
-
-  // Tenant 2: Grills & Traditional (c2_oriental)
-  {
-    id: 'm2_kabsa_lamb',
-    categoryId: 'c2_traditional',
-    nameAr: 'كبسة لحم غنم نعيمي هرفي',
-    nameEn: 'Lamb Kabsa Naeimi Premium',
-    descriptionAr: 'أرز بسمتي هندي مطبوخ على مرق لحم الهرفي مع خلطة بهارات الكبسة الفاخرة، مكسرات محمصة وصوص الدقوس الحار',
-    descriptionEn: 'Premium basmati rice baked inside local Harfi lamb broth, spiced with luxury Kabsa herbs, loaded with toasted nuts & spicy Daqqous sauce.',
-    price: 78.0,
-    imageUrl: 'https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=400&auto=format&fit=crop&q=80',
-    ingredients: [
-      { ingredientId: 'ing2_rice', quantityNeeded: 0.35 }, // 350g Rice
-      { ingredientId: 'ing2_lamb', quantityNeeded: 0.4 }, // 400g Lamb
-    ],
-    isAvailable: true,
-    extras: [
-      { nameAr: 'أرز ميز مزة إضافي', nameEn: 'Extra Basmati Rice Layer', price: 10.0 },
-      { nameAr: 'مكسرات محمصة مشكلة', nameEn: 'Toasted Almonds & Pine Nuts', price: 5.0 },
-    ],
-  },
-  {
-    id: 'm2_grill_shish',
-    categoryId: 'c2_oriental',
-    nameAr: 'شيش طاووق رويال على الفحم',
-    nameEn: 'Royal Charcoal Shish Taouk Platter',
-    descriptionAr: 'صدور دجاج متبلة بزيت الخردل وبهارات الشرق الفخمة، تشوى على الفحم، تقدم مع صوج الثوم الحار والأرز والبطاطس المقرمشة والأناناس المشوي',
-    descriptionEn: 'Tender chicken cubes marinated in mustard oils, grilled perfectly over live coal. Served with garlic cream, fries & grilled pineapple.',
-    price: 45.0,
-    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&auto=format&fit=crop&q=80',
-    ingredients: [],
-    isAvailable: true,
-    extras: [],
+    id: "b0000001-0000-0000-0000-000000000001",
+    tenantId: "a0000000-0000-0000-0000-000000000001",
+    nameAr: "الفرع الرئيسي",
+    nameEn: "Main Branch",
+    city: "Riyadh",
+    address: "الرياض",
+    phone: "0500000000",
+    status: "active",
   },
 ];
 
-const INITIAL_CRM: CustomerCRM[] = [
-  { id: 'crm_1', tenantId: 't1', name: 'سناء الحربي', phone: '0551122334', email: 'sanaa@gmail.com', points: 340, loyaltyTier: 'Gold', ordersCount: 12, totalSpent: 420.0, createdAt: '2026-03-01T15:00:00Z' },
-  { id: 'crm_2', tenantId: 't1', name: 'أحمد صالح الشمراني', phone: '0509988776', email: 'ahmad@outlook.com', points: 1400, loyaltyTier: 'VIP', ordersCount: 38, totalSpent: 1250.0, createdAt: '2026-01-20T11:30:00Z' },
-  { id: 'crm_3', tenantId: 't2', name: 'خالد بن فيصل', phone: '0543322110', email: 'khaled@vip.com', points: 790, loyaltyTier: 'VIP', ordersCount: 8, totalSpent: 850.0, createdAt: '2026-04-10T19:00:00Z' },
-];
-
-const INITIAL_COUPONS: Coupon[] = [
-  { id: 'cp_10', tenantId: 't1', code: 'PROMO10', discountPercent: 10, maxDiscount: 20, minOrderValue: 50, expiryDate: '2026-12-31', isActive: true },
-  { id: 'cp_20', tenantId: 't1', code: 'RAMADAN', discountPercent: 20, maxDiscount: 50, minOrderValue: 100, expiryDate: '2026-12-31', isActive: true },
-  { id: 'cp_vip', tenantId: 't2', code: 'EASTERNVIP', discountPercent: 15, maxDiscount: 200, minOrderValue: 200, expiryDate: '2026-12-31', isActive: true },
-];
+const INITIAL_HALLS: Hall[] = [];
+const INITIAL_TABLES: Table[] = [];
+const INITIAL_CATEGORIES: Category[] = [];
+const INITIAL_INGREDIENTS: Ingredient[] = [];
+const INITIAL_SUPPLIERS: Supplier[] = [];
+const INITIAL_MENU_ITEMS: MenuItem[] = [];
+const INITIAL_CRM: CustomerCRM[] = [];
+const INITIAL_COUPONS: Coupon[] = [];
 
 const INITIAL_EMPLOYEES: Employee[] = [
-  // Super Admin of SaaS platform
-  { id: 'emp_super_admin', tenantId: 't1', branchId: 'b1_1', name: 'سوبر أدمن المنصة (Super Admin)', email: 'admin@resto-erp.com', role: 'super_admin', phone: '0500000001', salary: 25000, attendanceHistory: [], performanceRating: 5.0, status: 'active', username: 'admin' },
-  // Tenant 1 Al-Sulaimania Branch
-  { id: 'emp1_owner', tenantId: 't1', branchId: 'b1_1', name: 'علي بن حسن الفاخر', email: 'ali@shawarmagrill.com', role: 'owner', phone: '0501111111', salary: 15000, attendanceHistory: [], performanceRating: 5.0, status: 'active', username: 'ali' },
-  { id: 'emp1_manager', tenantId: 't1', branchId: 'b1_1', name: 'أحمد رأفت (مدير الفرع)', email: 'ahmed@shawarmagrill.com', role: 'manager', phone: '0502222222', salary: 8500, attendanceHistory: [], performanceRating: 4.8, status: 'active', username: 'ahmed' },
-  { id: 'emp1_cashier', tenantId: 't1', branchId: 'b1_1', name: 'ساهر العتيبي (محاسب مبيعات)', email: 'saher@shawarmagrill.com', role: 'cashier', phone: '0503333333', salary: 4500, attendanceHistory: [], performanceRating: 4.5, status: 'active', username: 'saher' },
-  { id: 'emp1_waiter', tenantId: 't1', branchId: 'b1_1', name: 'وسام المصري (مضيف صالة)', email: 'wesam@shawarmagrill.com', role: 'waiter', phone: '0504444444', salary: 3800, attendanceHistory: [], performanceRating: 4.2, status: 'active', username: 'wesam' },
-  { id: 'emp1_kitchen', tenantId: 't1', branchId: 'b1_1', name: 'الشيف محمد الطايفي (رئيس طهاة)', email: 'chef.mohamad@shawarmagrill.com', role: 'kitchen', phone: '0505555555', salary: 7000, attendanceHistory: [], performanceRating: 4.9, status: 'active', username: 'chef' },
-  { id: 'emp1_accountant', tenantId: 't1', branchId: 'b1_1', name: 'خالد المحاسب (Accountant)', email: 'khaled@shawarmagrill.com', role: 'accountant', phone: '0506666666', salary: 6500, attendanceHistory: [], performanceRating: 4.7, status: 'active', username: 'finance' },
-  { id: 'emp1_hr', tenantId: 't1', branchId: 'b1_1', name: 'ماجد شؤون الموظفين (HR Manager)', email: 'majed@shawarmagrill.com', role: 'hr_manager', phone: '0507777777', salary: 6000, attendanceHistory: [], performanceRating: 4.6, status: 'active', username: 'hr' },
-  { id: 'emp1_inventory', tenantId: 't1', branchId: 'b1_1', name: 'فراس المستودعات (Inventory)', email: 'firas@shawarmagrill.com', role: 'inventory_manager', phone: '0508888888', salary: 5500, attendanceHistory: [], performanceRating: 4.5, status: 'active', username: 'stock' },
-  // Tenant 2 Main Jeddah Branch
-  { id: 'emp2_owner', tenantId: 't2', branchId: 'b2_1', name: 'الشيخ عبدالمحسن الكوهجي', email: 'ceo@easternpalace.sa', role: 'owner', phone: '0555555555', salary: 40000, attendanceHistory: [], performanceRating: 5.0, status: 'active', username: 'mohsen' },
-  { id: 'emp2_kitchen', tenantId: 't2', branchId: 'b2_1', name: 'شيف فهد السليماني', email: 'fahad@easternpalace.sa', role: 'kitchen', phone: '0554443322', salary: 12000, attendanceHistory: [], performanceRating: 4.9, status: 'active', username: 'fahad' },
-];
-
-const INITIAL_TRANSACTIONS: Transaction[] = [
-  // Tenant 1
-  { id: 'tx_1', tenantId: 't1', branchId: 'b1_1', type: 'income', categoryAr: 'مبيعات الكاشير', categoryEn: 'POS Sales Credit', amount: 1250.0, descriptionAr: 'إيراد المبيعات اليومية لفترة الصباح', descriptionEn: 'Morning session sales revenues accumulated', date: '2026-06-13T10:00:00Z', createdBy: 'ساهر العتيبي' },
-  { id: 'tx_2', tenantId: 't1', branchId: 'b1_1', type: 'expense', categoryAr: 'فواتير الموردين ومشتريات', categoryEn: 'Suppliers Procurement', amount: 350.0, descriptionAr: 'شراء بطاطس واجبنة موزاريلا حليب طازج من شركة الشاملة', descriptionEn: 'Sourced premium French fries and mozzarella blocks', date: '2026-06-12T15:30:00Z', createdBy: 'أحمد رأفت' },
-  { id: 'tx_3', tenantId: 't1', branchId: 'b1_1', type: 'expense', categoryAr: 'صيانة ومصروفات تشغيلية', categoryEn: 'Operational Maintenance', amount: 180.0, descriptionAr: 'تغيير فلاتر زيت القلي وتعبئة دبة الغاز الاحتياطية', descriptionEn: 'Fries oil filter swap & refill cylinder butane gas', date: '2026-06-11T12:00:00Z', createdBy: 'أحمد رأفت' },
-];
-
-const INITIAL_ORDERS: Order[] = [
   {
-    id: 'ord_1',
-    tenantId: 't1',
-    branchId: 'b1_1',
-    tableId: 'tbl_1_2',
-    hallId: 'h1_1_main',
-    type: 'dine_in',
-    status: 'preparing',
-    items: [
-      {
-        id: 'oi_1',
-        menuItemId: 'm1_burger_beef',
-        nameAr: 'برو برجر كلاسيك دبل بقري',
-        nameEn: 'Double Pro-Burger Beef Classic',
-        quantity: 2,
-        price: 32.0,
-        selectedExtras: [{ nameAr: 'شريحة جبن إضافية', nameEn: 'Extra Cheese Slice', price: 3.5 }],
-        notes: 'الرجاء الإكثار من صوص البرجر السري ولحم من غير بصل',
-      },
-      {
-        id: 'oi_2',
-        menuItemId: 'm1_fries_classic',
-        nameAr: 'بطاطس بلجيكية مبهرة مقرمشة',
-        nameEn: 'Crispi Belgian Fries Seasoned',
-        quantity: 1,
-        price: 10.0,
-        selectedExtras: [],
-      },
-    ],
-    subtotal: 81.0, // (32+3.5)*2 + 10
-    taxAmount: 12.15, // 15%
-    serviceAmount: 0.0,
-    discountAmount: 0.0,
-    total: 93.15,
-    cashierId: 'emp1_cashier',
-    waiterId: 'emp1_waiter',
-    paymentMethod: 'unpaid',
-    paymentStatus: 'unpaid',
-    createdAt: '2026-06-13T21:10:00-07:00',
-    updatedAt: '2026-06-13T21:12:00-07:00',
-  },
-  {
-    id: 'ord_2',
-    tenantId: 't1',
-    branchId: 'b1_1',
-    tableId: 'tbl_1_11',
-    hallId: 'h1_1_family',
-    type: 'dine_in',
-    status: 'ready',
-    items: [
-      {
-        id: 'oi_3',
-        menuItemId: 'm1_pizza_marg',
-        nameAr: 'بيتزا مارغريتا نابولي الأصلية',
-        nameEn: 'Original Napoli Margherita Pizza',
-        quantity: 1,
-        price: 36.0,
-        selectedExtras: [],
-        notes: 'تأكيد نضج الأطراف بشكل ذهبي',
-      },
-      {
-        id: 'oi_4',
-        menuItemId: 'm1_cola',
-        nameAr: 'كولا بارد بالثلج والليمون',
-        nameEn: 'Cold Cola with Lime & Ice',
-        quantity: 2,
-        price: 5.5,
-        selectedExtras: [],
-      },
-    ],
-    subtotal: 47.0, // 36 + 11
-    taxAmount: 7.05,
-    serviceAmount: 0.0,
-    discountAmount: 5.0, // RAMADAN code applied
-    total: 49.05,
-    cashierId: 'emp1_cashier',
-    waiterId: 'emp1_waiter',
-    paymentMethod: 'card',
-    paymentStatus: 'paid',
-    createdAt: '2026-06-13T20:45:00-07:00',
-    updatedAt: '2026-06-13T20:55:00-07:00',
+    id: "e0000000-0000-0000-0000-000000000001",
+    tenantId: "a0000000-0000-0000-0000-000000000001",
+    branchId: "b0000001-0000-0000-0000-000000000001",
+    name: "المدير العام",
+    email: "synasma9@gmail.com",
+    role: "super_admin",
+    phone: "0500000000",
+    salary: 25000,
+    attendanceHistory: [],
+    performanceRating: 5.0,
+    status: "active",
+    username: "synasma9",
+    password: "Plmoknijb098.",
   },
 ];
+
+const INITIAL_TRANSACTIONS: Transaction[] = [];
+const INITIAL_ORDERS: Order[] = [];
 
 // Explicit Enterprise DTO Serializers & Deserializers (Zero Runtime Reflection)
 const toTenant = (row: Record<string, any>): Tenant => ({
