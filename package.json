@@ -1,18 +1,32 @@
 {
-  "name": "restohub-db-updates",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "restohub-saas-erp",
+  "private": true,
+  "version": "2.0.0",
+  "description": "RestoHub SaaS ERP & POS Platform - Supabase BaaS Cloud Native Edition",
+  "type": "module",
   "scripts": {
-    "dev:frontend": "npm --prefix project run dev:frontend",
-    "dev:backend": "npm --prefix project run dev:backend",
-    "build:frontend": "npm --prefix project run build:frontend",
-    "db:init": "npm --prefix project run db:init",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite --port=3000 --host=0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "private": true
+  "dependencies": {
+    "@supabase/supabase-js": "^2.109.0",
+    "@tailwindcss/vite": "^4.1.14",
+    "@vitejs/plugin-react": "^5.0.4",
+    "lucide-react": "^0.546.0",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.0",
+    "tailwindcss": "^4.1.14",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3"
+  }
 }
