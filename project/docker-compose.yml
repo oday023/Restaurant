@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    container_name: restohub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: resto
+      POSTGRES_PASSWORD: resto
+      POSTGRES_DB: restohub
+    volumes:
+      - ./project/backend/db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
