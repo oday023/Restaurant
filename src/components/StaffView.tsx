@@ -409,17 +409,17 @@ export default function StaffView({ tenantId, language, onAddNotification, curre
         </div>
 
         {/* Sub-tab Pill Row */}
-        <div className="flex p-1 bg-[#0d121f]/60 border border-slate-800/80 rounded-2xl self-start sm:self-auto gap-1">
+        <div className="flex p-1 bg-[#111827] border border-slate-800/80 rounded-2xl self-start sm:self-auto gap-1">
           <button
             onClick={() => setSubTab('directory')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${subTab === 'directory' ? 'bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-900/40'}`}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${subTab === 'directory' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-900/70'}`}
           >
             <Briefcase className="w-3.5 h-3.5" />
             <span>{isRtl ? 'دليل الموظفين' : 'Staff Roster'}</span>
           </button>
           <button
             onClick={() => setSubTab('payroll')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${subTab === 'payroll' ? 'bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-900/40'}`}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${subTab === 'payroll' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-900/70'}`}
           >
             <Coins className="w-3.5 h-3.5" />
             <span>{isRtl ? 'مسير الرواتب والأجور' : 'Payroll Sheet'}</span>
@@ -441,7 +441,7 @@ export default function StaffView({ tenantId, language, onAddNotification, curre
               <button
                 type="button"
                 onClick={() => setShowAddForm(!showAddForm)}
-                className="py-1.5 px-3.5 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white rounded-xl text-[10px] font-black cursor-pointer transition active:scale-95 shadow-md flex items-center gap-1.5"
+                className="py-1.5 px-3.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-[10px] font-black cursor-pointer transition active:scale-95 shadow-sm flex items-center gap-1.5"
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 {isRtl ? 'إنشاء حساب موظف' : 'Register Staff Account'}

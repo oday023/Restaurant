@@ -51,7 +51,7 @@ export default function CRMView({ tenantId, language, onAddNotification }: CRMVi
     <div className="text-slate-200 animate-fade-in select-none">
       
       {/* Customer Profiles Log sheets */}
-      <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/80 rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-4">
+      <div className="glass-panel bg-[#111827] border border-slate-800/80 rounded-3xl p-6 shadow-[0_10px_24px_rgba(0,0,0,0.24)] space-y-4">
         {errorMessage && (
           <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">
             {isRtl ? 'تعذر تحميل بيانات العملاء من الخادم:' : 'Unable to load CRM data from the server:'} {errorMessage}
@@ -83,7 +83,7 @@ export default function CRMView({ tenantId, language, onAddNotification }: CRMVi
             }[cust.loyaltyTier] || 'bg-slate-900 border-slate-800';
 
             return (
-              <div key={cust.id} className="p-4 rounded-3xl bg-[#090d16]/40 border border-slate-850 hover:border-slate-750 hover:bg-[#0c101d]/60 shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition duration-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div key={cust.id} className="p-4 rounded-3xl bg-[#0d131c] border border-slate-800 hover:border-slate-700 hover:bg-[#111827] shadow-sm transition duration-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 
                 {/* identity info */}
                 <div className="space-y-1">

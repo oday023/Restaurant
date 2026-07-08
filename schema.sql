@@ -99,6 +99,7 @@ CREATE TABLE employees (
     branch_id           UUID          NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
     name                VARCHAR(255)  NOT NULL,
     email               VARCHAR(255)  NOT NULL,
+    auth_user_id        UUID,                   -- Supabase Auth user ID linked to this employee
     username            VARCHAR(100),
     password_hash       TEXT,                    -- bcrypt hash، لا تخزن كلمة المرور نصاً
     role                VARCHAR(50)   NOT NULL
@@ -118,10 +119,11 @@ CREATE TABLE employees (
     UNIQUE (tenant_id, username)
 );
 
-CREATE INDEX idx_employees_tenant   ON employees(tenant_id);
-CREATE INDEX idx_employees_branch   ON employees(branch_id);
-CREATE INDEX idx_employees_role     ON employees(role);
-CREATE INDEX idx_employees_username ON employees(tenant_id, username);
+CREATE INDEX idx_employees_tenant         ON employees(tenant_id);
+CREATE INDEX idx_employees_branch         ON employees(branch_id);
+CREATE INDEX idx_employees_role           ON employees(role);
+CREATE INDEX idx_employees_username       ON employees(tenant_id, username);
+CREATE INDEX idx_employees_auth_user_id   ON employees(auth_user_id);
 
 -- ============================================================
 --  4. ATTENDANCE RECORDS (سجلات الحضور والغياب)
@@ -739,6 +741,45 @@ ALTER TABLE audit_logs            ENABLE ROW LEVEL SECURITY;
 CREATE OR REPLACE FUNCTION current_tenant_id() RETURNS UUID AS $$
     SELECT (auth.jwt()->>'jwt_tenant_id')::uuid;
 $$ LANGUAGE sql STABLE;
+
+-- Supabase Auth Hook: inject tenant claim into access token claims
+CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+    claims jsonb;
+    tenant_id uuid;
+    emp_role text;
+BEGIN
+    SELECT e.tenant_id, e.role
+    INTO tenant_id, emp_role
+    FROM public.employees e
+    WHERE e.auth_user_id = (event->>'user_id')::uuid
+    ORDER BY e.created_at DESC
+    LIMIT 1;
+
+    claims := coalesce(event->'claims', '{}'::jsonb);
+
+    IF tenant_id IS NOT NULL THEN
+        claims := jsonb_set(claims, '{jwt_tenant_id}', to_jsonb(tenant_id::text));
+    END IF;
+
+    IF emp_role IS NOT NULL THEN
+        claims := jsonb_set(claims, '{jwt_role}', to_jsonb(emp_role));
+    END IF;
+
+    event := jsonb_set(event, '{claims}', claims);
+    RETURN event;
+END;
+$$;
+
+GRANT USAGE ON SCHEMA public TO supabase_auth_admin;
+GRANT EXECUTE ON FUNCTION public.custom_access_token_hook TO supabase_auth_admin;
+REVOKE EXECUTE ON FUNCTION public.custom_access_token_hook FROM authenticated, anon, public;
 
 -- Tenant isolation policies
 CREATE POLICY rls_tenants ON tenants

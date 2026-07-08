@@ -620,12 +620,26 @@ export class StorageService {
   public static async login(username: string, password: string): Promise<Employee> {
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data: authData } = await supabase.auth.signInWithPassword({
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email: username,
           password,
         });
+
+        if (authError) {
+          throw new Error(authError.message || "Invalid username or password.");
+        }
+
         if (authData?.user) {
-          const { data: empData } = await supabase.from("employees").select("*").eq("email", username).single();
+          const { data: empData, error: empError } = await supabase
+            .from("employees")
+            .select("*")
+            .eq("email", username)
+            .single();
+
+          if (empError) {
+            throw new Error(empError.message || "Unable to load employee profile.");
+          }
+
           if (empData) {
             const emp = toEmployee(empData);
             this.set("employees", [emp]);
@@ -636,24 +650,39 @@ export class StorageService {
             return emp;
           }
         }
+
+        throw new Error("Invalid username or password.");
       } catch (err) {
         if (import.meta.env.DEV) {
-          console.warn("Supabase auth login fallback:", err);
+          console.warn("Supabase auth login failed:", err);
         }
+        throw err instanceof Error ? err : new Error("Invalid username or password.");
       }
     }
 
+    // Demo / Offline fallback only: used when Supabase is not configured at all.
     const emps = this.get<Employee[]>("employees", INITIAL_EMPLOYEES);
-    const matched = emps.find(e => e.username === username || e.email === username);
-    if (matched) {
-      this.set("employees", [matched]);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem("restohub_token", "demo_token_" + matched.id);
-      }
-      await this.loadProtectedData(matched);
-      return matched;
+    const matched = emps.find((e) => e.username === username || e.email === username);
+
+    if (!matched) {
+      throw new Error("Invalid username or password.");
     }
-    throw new Error("Invalid username or password.");
+
+    const passwordMatches =
+      matched.password !== undefined &&
+      matched.password !== null &&
+      String(matched.password) === String(password);
+
+    if (!passwordMatches) {
+      throw new Error("Invalid username or password.");
+    }
+
+    this.set("employees", [matched]);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("restohub_token", "demo_token_" + matched.id);
+    }
+    await this.loadProtectedData(matched);
+    return matched;
   }
 
   public static async logout() {

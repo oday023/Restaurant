@@ -81,6 +81,54 @@ type FieldConfig = {
   options?: (ctx: AdminContext) => Option[];
 };
 
+class AdminFieldFactory {
+  static text(key: string, labelAr: string, labelEn: string, overrides: Partial<FieldConfig> = {}): FieldConfig {
+    return { key, labelAr, labelEn, type: 'text', ...overrides };
+  }
+
+  static textarea(key: string, labelAr: string, labelEn: string, overrides: Partial<FieldConfig> = {}): FieldConfig {
+    return { key, labelAr, labelEn, type: 'textarea', ...overrides };
+  }
+
+  static number(key: string, labelAr: string, labelEn: string, overrides: Partial<FieldConfig> = {}): FieldConfig {
+    return { key, labelAr, labelEn, type: 'number', ...overrides };
+  }
+
+  static select(
+    key: string,
+    labelAr: string,
+    labelEn: string,
+    options: FieldConfig['options'],
+    overrides: Partial<FieldConfig> = {}
+  ): FieldConfig {
+    return { key, labelAr, labelEn, type: 'select', ...overrides, options };
+  }
+
+  static statusSelect(
+    key: string,
+    labelAr: string,
+    labelEn: string,
+    values: Option[],
+    overrides: Partial<FieldConfig> = {}
+  ): FieldConfig {
+    return this.select(key, labelAr, labelEn, () => values, overrides);
+  }
+
+  static activeInactiveStatus(key = 'status'): FieldConfig {
+    return this.statusSelect(key, 'الحالة', 'Status', [
+      { value: 'active', labelAr: 'نشط', labelEn: 'Active' },
+      { value: 'inactive', labelAr: 'غير نشط', labelEn: 'Inactive' },
+    ]);
+  }
+
+  static activeSuspendedStatus(key = 'status'): FieldConfig {
+    return this.statusSelect(key, 'الحالة', 'Status', [
+      { value: 'active', labelAr: 'نشط', labelEn: 'Active' },
+      { value: 'suspended', labelAr: 'موقوف', labelEn: 'Suspended' },
+    ]);
+  }
+}
+
 type AdminContext = {
   tenants: Tenant[];
   branches: Branch[];
@@ -205,47 +253,28 @@ const getEntityConfigs = (ctx: AdminContext): EntityConfig[] => [
     save: (record) => StorageService.saveTenant(record as Tenant),
     remove: (id) => StorageService.deleteTenant(id),
     fields: [
-      { key: 'nameAr', labelAr: 'الاسم بالعربية', labelEn: 'Arabic name', type: 'text', required: true },
-      { key: 'nameEn', labelAr: 'الاسم بالإنجليزية', labelEn: 'English name', type: 'text', required: true },
-      { key: 'logoUrl', labelAr: 'الشعار', labelEn: 'Logo URL / File path', type: 'text', placeholderAr: 'مثال: /uploads/logo.png أو https://...', placeholderEn: 'e.g. /uploads/logo.png or https://...' },
-      { key: 'email', labelAr: 'البريد', labelEn: 'Email', type: 'text', required: true },
-      { key: 'phone', labelAr: 'الهاتف', labelEn: 'Phone', type: 'text' },
-      { key: 'address', labelAr: 'العنوان', labelEn: 'Address', type: 'textarea' },
-      {
-        key: 'currencyCode',
-        labelAr: 'العملة',
-        labelEn: 'Currency',
-        type: 'select',
-        required: true,
-        options: () => [
-          { value: 'SAR', labelAr: 'ل.س', labelEn: 'SAR' },
-          { value: 'TRY', labelAr: 'ل.ت', labelEn: 'TRY' },
-          { value: 'USD', labelAr: 'دولار', labelEn: 'USD' },
-        ],
-      },
-      { key: 'taxPercent', labelAr: 'نسبة الضريبة', labelEn: 'Tax %', type: 'number' },
-      { key: 'servicePercent', labelAr: 'نسبة الخدمة', labelEn: 'Service %', type: 'number' },
-      {
-        key: 'status',
-        labelAr: 'الحالة',
-        labelEn: 'Status',
-        type: 'select',
-        options: () => [
-          { value: 'active', labelAr: 'نشط', labelEn: 'Active' },
-          { value: 'suspended', labelAr: 'موقوف', labelEn: 'Suspended' },
-        ],
-      },
-      {
-        key: 'subscriptionPlan',
-        labelAr: 'الباقة',
-        labelEn: 'Plan',
-        type: 'select',
-        options: () => [
-          { value: 'starter', labelAr: 'مبتدئة', labelEn: 'Starter' },
-          { value: 'pro', labelAr: 'احترافية', labelEn: 'Pro' },
-          { value: 'enterprise', labelAr: 'مؤسسية', labelEn: 'Enterprise' },
-        ],
-      },
+      AdminFieldFactory.text('nameAr', 'الاسم بالعربية', 'Arabic name', { required: true }),
+      AdminFieldFactory.text('nameEn', 'الاسم بالإنجليزية', 'English name', { required: true }),
+      AdminFieldFactory.text('logoUrl', 'الشعار', 'Logo URL / File path', {
+        placeholderAr: 'مثال: /uploads/logo.png أو https://...',
+        placeholderEn: 'e.g. /uploads/logo.png or https://...',
+      }),
+      AdminFieldFactory.text('email', 'البريد', 'Email', { required: true }),
+      AdminFieldFactory.text('phone', 'الهاتف', 'Phone'),
+      AdminFieldFactory.textarea('address', 'العنوان', 'Address'),
+      AdminFieldFactory.select('currencyCode', 'العملة', 'Currency', () => [
+        { value: 'SAR', labelAr: 'ل.س', labelEn: 'SAR' },
+        { value: 'TRY', labelAr: 'ل.ت', labelEn: 'TRY' },
+        { value: 'USD', labelAr: 'دولار', labelEn: 'USD' },
+      ], { required: true }),
+      AdminFieldFactory.number('taxPercent', 'نسبة الضريبة', 'Tax %'),
+      AdminFieldFactory.number('servicePercent', 'نسبة الخدمة', 'Service %'),
+      AdminFieldFactory.activeSuspendedStatus('status'),
+      AdminFieldFactory.select('subscriptionPlan', 'الباقة', 'Plan', () => [
+        { value: 'starter', labelAr: 'free', labelEn: 'Starter' },
+        { value: 'pro', labelAr: 'pro', labelEn: 'Pro' },
+        { value: 'enterprise', labelAr: 'pro plus', labelEn: 'Enterprise' },
+      ]),
     ],
   },
   {
@@ -273,29 +302,13 @@ const getEntityConfigs = (ctx: AdminContext): EntityConfig[] => [
     save: (record) => StorageService.saveBranch(record as Branch),
     remove: (id) => StorageService.deleteBranch(id),
     fields: [
-      {
-        key: 'tenantId',
-        labelAr: 'المطعم',
-        labelEn: 'Tenant',
-        type: 'select',
-        required: true,
-        options: () => ctx.tenants.map((tenant) => ({ value: tenant.id, labelAr: tenant.nameAr, labelEn: tenant.nameEn })),
-      },
-      { key: 'nameAr', labelAr: 'اسم الفرع بالعربية', labelEn: 'Arabic branch name', type: 'text', required: true },
-      { key: 'nameEn', labelAr: 'اسم الفرع بالإنجليزية', labelEn: 'English branch name', type: 'text', required: true },
-      { key: 'city', labelAr: 'المدينة', labelEn: 'City', type: 'text', required: true },
-      { key: 'address', labelAr: 'العنوان', labelEn: 'Address', type: 'textarea' },
-      { key: 'phone', labelAr: 'الهاتف', labelEn: 'Phone', type: 'text' },
-      {
-        key: 'status',
-        labelAr: 'الحالة',
-        labelEn: 'Status',
-        type: 'select',
-        options: () => [
-          { value: 'active', labelAr: 'نشط', labelEn: 'Active' },
-          { value: 'inactive', labelAr: 'غير نشط', labelEn: 'Inactive' },
-        ],
-      },
+      AdminFieldFactory.select('tenantId', 'المطعم', 'Tenant', (currentCtx) => currentCtx.tenants.map((tenant) => ({ value: tenant.id, labelAr: tenant.nameAr, labelEn: tenant.nameEn })), { required: true }),
+      AdminFieldFactory.text('nameAr', 'اسم الفرع بالعربية', 'Arabic branch name', { required: true }),
+      AdminFieldFactory.text('nameEn', 'اسم الفرع بالإنجليزية', 'English branch name', { required: true }),
+      AdminFieldFactory.text('city', 'المدينة', 'City', { required: true }),
+      AdminFieldFactory.textarea('address', 'العنوان', 'Address'),
+      AdminFieldFactory.text('phone', 'الهاتف', 'Phone'),
+      AdminFieldFactory.activeInactiveStatus('status'),
     ],
   },
   {
@@ -319,16 +332,9 @@ const getEntityConfigs = (ctx: AdminContext): EntityConfig[] => [
     save: (record) => StorageService.saveHall(record as Hall),
     remove: (id) => StorageService.deleteHall(id),
     fields: [
-      {
-        key: 'branchId',
-        labelAr: 'الفرع',
-        labelEn: 'Branch',
-        type: 'select',
-        required: true,
-        options: () => ctx.branches.map((branch) => ({ value: branch.id, labelAr: branch.nameAr, labelEn: branch.nameEn })),
-      },
-      { key: 'nameAr', labelAr: 'اسم الصالة بالعربية', labelEn: 'Arabic hall name', type: 'text', required: true },
-      { key: 'nameEn', labelAr: 'اسم الصالة بالإنجليزية', labelEn: 'English hall name', type: 'text', required: true },
+      AdminFieldFactory.select('branchId', 'الفرع', 'Branch', (currentCtx) => currentCtx.branches.map((branch) => ({ value: branch.id, labelAr: branch.nameAr, labelEn: branch.nameEn })), { required: true }),
+      AdminFieldFactory.text('nameAr', 'اسم الصالة بالعربية', 'Arabic hall name', { required: true }),
+      AdminFieldFactory.text('nameEn', 'اسم الصالة بالإنجليزية', 'English hall name', { required: true }),
     ],
   },
   {
@@ -1054,8 +1060,8 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-900 text-white rounded-[2rem] p-6 md:p-7 shadow-2xl border border-slate-800 overflow-hidden relative">
-        <div className="absolute inset-0 opacity-25 pointer-events-none bg-[radial-gradient(circle_at_top_right,_rgba(16,185,129,0.45),_transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.35),_transparent_30%)]" />
+      <div className="bg-[#111827] text-white rounded-[2rem] p-6 md:p-7 shadow-[0_10px_24px_rgba(0,0,0,0.24)] border border-slate-800 overflow-hidden relative">
+        <div className="absolute inset-0 opacity-25 pointer-events-none bg-[radial-gradient(circle_at_top_right,_rgba(249,115,22,0.22),_transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(56,189,248,0.2),_transparent_30%)]" />
         <div className="relative flex flex-col lg:flex-row gap-4 lg:items-end lg:justify-between">
           <div className="space-y-2 max-w-3xl">
             <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.28em] text-emerald-200">
@@ -1075,14 +1081,14 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
             <button
               type="button"
               onClick={() => setPanel('manage')}
-              className={`rounded-2xl px-4 py-3 text-sm font-bold transition border ${panel === 'manage' ? 'bg-white text-slate-900 border-white shadow-lg' : 'bg-white/5 border-white/15 text-white hover:bg-white/10'}`}
+              className={`rounded-2xl px-4 py-3 text-sm font-bold transition border ${panel === 'manage' ? 'bg-orange-600 text-white border-orange-600 shadow-sm' : 'bg-slate-900/70 border-slate-800 text-slate-200 hover:bg-slate-800'}`}
             >
               {isRtl ? 'الإدارة' : 'Manage'}
             </button>
             <button
               type="button"
               onClick={() => setPanel('overview')}
-              className={`rounded-2xl px-4 py-3 text-sm font-bold transition border ${panel === 'overview' ? 'bg-white text-slate-900 border-white shadow-lg' : 'bg-white/5 border-white/15 text-white hover:bg-white/10'}`}
+              className={`rounded-2xl px-4 py-3 text-sm font-bold transition border ${panel === 'overview' ? 'bg-orange-600 text-white border-orange-600 shadow-sm' : 'bg-slate-900/70 border-slate-800 text-slate-200 hover:bg-slate-800'}`}
             >
               {isRtl ? 'الملخص' : 'Overview'}
             </button>
@@ -1094,12 +1100,12 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
         {overviewCards.map((card) => {
           const CardIcon = card.icon;
           return (
-            <div key={card.key} className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm flex items-center justify-between">
+            <div key={card.key} className="bg-[#111827] rounded-3xl border border-slate-800 p-5 shadow-sm flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-black tracking-[0.22em] uppercase text-slate-400">{isRtl ? card.labelAr : card.labelEn}</p>
-                <p className="text-2xl font-black text-slate-900 mt-1">{card.count}</p>
+                <p className="text-2xl font-black text-white mt-1">{card.count}</p>
               </div>
-              <div className="p-3 rounded-2xl bg-slate-50 text-emerald-600 border border-slate-100">
+              <div className="p-3 rounded-2xl bg-slate-900 text-orange-500 border border-slate-800">
                 <CardIcon className="w-5 h-5" />
               </div>
             </div>
@@ -1108,26 +1114,26 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
       </div>
 
       {panel === 'overview' ? (
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 space-y-4">
-          <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-            <Settings2 className="w-5 h-5 text-emerald-600" />
+        <div className="bg-[#111827] rounded-[2rem] border border-slate-800 shadow-sm p-6 space-y-4">
+          <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
+            <Settings2 className="w-5 h-5 text-orange-500" />
             <div>
-              <h3 className="text-sm font-black text-slate-900">{isRtl ? 'ملخص الإدارة' : 'Management summary'}</h3>
+              <h3 className="text-sm font-black text-white">{isRtl ? 'ملخص الإدارة' : 'Management summary'}</h3>
               <p className="text-[11px] text-slate-400">{isRtl ? 'نظرة سريعة على النظام والبيانات الأساسية' : 'Quick view of the system and core data sets'}</p>
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">{isRtl ? 'الوحدات القابلة للتعديل' : 'Editable modules'}</p>
-              <p className="mt-2 text-sm text-slate-700 leading-7">
+            <div className="rounded-3xl border border-slate-800 bg-[#0d131c] p-5">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{isRtl ? 'الوحدات القابلة للتعديل' : 'Editable modules'}</p>
+              <p className="mt-2 text-sm text-slate-300 leading-7">
                 {isRtl
                   ? 'العمليات الأساسية متاحة على: المطاعم، الفروع، الصالات، الطاولات، التصنيفات، الموردين، المواد الخام، الأصناف، الموظفين، العملاء، الكوبونات، الحركات المالية.'
                   : 'Core operations are available for tenants, branches, halls, tables, categories, suppliers, ingredients, menu items, employees, customers, coupons, and financial transactions.'}
               </p>
             </div>
-            <div className="rounded-3xl border border-slate-100 bg-emerald-50 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-700">{isRtl ? 'القيود المهمة' : 'Important rules'}</p>
-              <ul className="mt-2 space-y-2 text-sm text-emerald-950 leading-6">
+            <div className="rounded-3xl border border-orange-500/20 bg-orange-500/10 p-5">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-orange-400">{isRtl ? 'القيود المهمة' : 'Important rules'}</p>
+              <ul className="mt-2 space-y-2 text-sm text-slate-200 leading-6">
                 <li>{isRtl ? 'الطلبات قابلة للتعديل والحذف من هنا، لكن إنشاؤها الرئيسي يظل من POS / QR.' : 'Orders can be edited and deleted here, while their primary creation flow remains in POS / QR.'}</li>
                 <li>{isRtl ? 'العلاقات المركبة مثل الوصفات والحضور ما زالت مخزنة داخلياً وتحتاج قرار تطبيع لاحق.' : 'Composite relations such as recipes and attendance are still embedded and need a later normalization decision.'}</li>
                 <li>{isRtl ? 'الواجهة الآن ثنائية اللغة بشكل أوضح، مع تقليل النصوص المختلطة.' : 'The interface is now more clearly bilingual, with fewer mixed-language labels.'}</li>
@@ -1137,11 +1143,11 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6">
-          <aside className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-4 space-y-3 max-h-[78vh] overflow-y-auto">
-            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-              <Database className="w-4.5 h-4.5 text-emerald-600" />
+          <aside className="bg-[#111827] rounded-[2rem] border border-slate-800 shadow-sm p-4 space-y-3 max-h-[78vh] overflow-y-auto">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
+              <Database className="w-4.5 h-4.5 text-orange-500" />
               <div>
-                <p className="text-xs font-black text-slate-800">{isRtl ? 'الكيانات' : 'Entities'}</p>
+                <p className="text-xs font-black text-white">{isRtl ? 'الكيانات' : 'Entities'}</p>
                 <p className="text-[10px] text-slate-400">{isRtl ? 'اختر الجدول المراد تعديله' : 'Pick the table you want to manage'}</p>
               </div>
             </div>
@@ -1159,7 +1165,7 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
                       setEditingId(null);
                       setSearchQuery('');
                     }}
-                    className={`w-full text-left rounded-2xl px-3 py-3 border transition ${active ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-slate-50 border-slate-100 text-slate-700 hover:bg-slate-100'}`}
+                    className={`w-full text-left rounded-2xl px-3 py-3 border transition ${active ? 'bg-orange-600 border-orange-600 text-white shadow-sm' : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:bg-slate-800'}`}
                   >
                     <div className="flex items-center gap-2">
                       <ConfigIcon className={`w-4 h-4 shrink-0 ${active ? 'text-emerald-300' : 'text-emerald-600'}`} />
@@ -1175,10 +1181,10 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
           </aside>
 
           <section className="space-y-5">
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5">
+            <div className="bg-[#111827] rounded-[2rem] border border-slate-800 shadow-sm p-5">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                  <h3 className="text-base font-black text-slate-900">{isRtl ? currentConfig.titleAr : currentConfig.titleEn}</h3>
+                  <h3 className="text-base font-black text-white">{isRtl ? currentConfig.titleAr : currentConfig.titleEn}</h3>
                   <p className="text-[11px] text-slate-400 mt-1">{isRtl ? currentConfig.descriptionAr : currentConfig.descriptionEn}</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
@@ -1188,14 +1194,14 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
                       value={searchQuery}
                       onChange={(event) => setSearchQuery(event.target.value)}
                       placeholder={isRtl ? 'بحث سريع...' : 'Quick search...'}
-                      className="w-full sm:w-72 rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20"
+                      className="w-full sm:w-72 rounded-2xl border border-slate-800 bg-slate-900/70 py-2.5 pl-9 pr-4 text-sm text-white outline-none focus:ring-2 focus:ring-orange-500/30"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={handleNew}
                     disabled={!currentConfig.allowCreate}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:bg-slate-700"
                   >
                     <Plus className="w-4 h-4" />
                     {isRtl ? 'سجل جديد' : 'New record'}
@@ -1205,10 +1211,10 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-5">
-              <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
+              <div className="bg-[#111827] rounded-[2rem] border border-slate-800 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-800 bg-[#0f1724] flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-black text-slate-800">{isRtl ? 'السجلات الحالية' : 'Current records'}</p>
+                    <p className="text-xs font-black text-white">{isRtl ? 'السجلات الحالية' : 'Current records'}</p>
                     <p className="text-[10px] text-slate-400">{filteredItems.length} {isRtl ? 'سجل' : 'rows'}</p>
                   </div>
                   {editingId && (
@@ -1218,7 +1224,7 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
                         setEditingId(null);
                         setDraft(emptyDraftFor(currentConfig.fields));
                       }}
-                      className="text-xs font-bold text-slate-500 hover:text-slate-900"
+                      className="text-xs font-bold text-slate-400 hover:text-white"
                     >
                       {isRtl ? 'إلغاء التعديل' : 'Cancel edit'}
                     </button>
@@ -1227,7 +1233,7 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
 
                 <div className="max-h-[62vh] overflow-auto">
                   <table className="min-w-full divide-y divide-slate-100 text-sm">
-                    <thead className="sticky top-0 bg-white/95 backdrop-blur z-10">
+                    <thead className="sticky top-0 bg-[#111827] z-10">
                       <tr className="text-slate-400 text-xs uppercase tracking-[0.18em]">
                         <th className="px-5 py-3 text-left">{isRtl ? 'السجل' : 'Record'}</th>
                         <th className="px-5 py-3 text-left">{isRtl ? 'تفاصيل مختصرة' : 'Quick details'}</th>
@@ -1240,9 +1246,9 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
                         const isActive = editingId === id;
                         const summaryFields = currentConfig.fields.slice(0, 3);
                         return (
-                          <tr key={id} className={isActive ? 'bg-emerald-50/40' : 'bg-white'}>
+                          <tr key={id} className={isActive ? 'bg-orange-500/10' : 'bg-[#111827]'}>
                             <td className="px-5 py-4 align-top">
-                              <div className="font-black text-slate-900">{id}</div>
+                              <div className="font-black text-white">{id}</div>
                               <div className="text-[11px] text-slate-400 mt-1">{isRtl ? currentConfig.titleAr : currentConfig.titleEn}</div>
                             </td>
                             <td className="px-5 py-4 align-top">
@@ -1253,7 +1259,7 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
                                   const label = options.find((option) => option.value === String(raw));
                                   const display = label ? optionLabel(label, isRtl) : toDraftValue(raw);
                                   return (
-                                    <span key={field.key} className="inline-flex max-w-full items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                                    <span key={field.key} className="inline-flex max-w-full items-center rounded-full border border-slate-800 bg-slate-900/70 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
                                       <span className="opacity-60 me-1">{isRtl ? field.labelAr : field.labelEn}:</span>
                                       <span className="truncate">{display}</span>
                                     </span>
@@ -1267,7 +1273,7 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
                                   <button
                                     type="button"
                                     onClick={() => handleEdit(record)}
-                                    className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                                    className="inline-flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-800"
                                   >
                                     <PencilLine className="w-3.5 h-3.5" />
                                     {isRtl ? 'تعديل' : 'Edit'}
@@ -1300,13 +1306,13 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
                 </div>
               </div>
 
-              <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5">
-                <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                  <div className="p-2.5 rounded-2xl bg-slate-50 text-emerald-600 border border-slate-100">
+              <div className="bg-[#111827] rounded-[2rem] border border-slate-800 shadow-sm p-5">
+                <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+                  <div className="p-2.5 rounded-2xl bg-slate-900 text-orange-500 border border-slate-800">
                     <PencilLine className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-slate-900">{editingId ? (isRtl ? 'تعديل السجل' : 'Edit record') : (isRtl ? 'إضافة سجل' : 'Create record')}</h4>
+                    <h4 className="text-sm font-black text-white">{editingId ? (isRtl ? 'تعديل السجل' : 'Edit record') : (isRtl ? 'إضافة سجل' : 'Create record')}</h4>
                     <p className="text-[10px] text-slate-400 mt-1">{isRtl ? 'استخدم الحقول أدناه للحفظ السريع' : 'Use the fields below for quick save operations'}</p>
                   </div>
                 </div>
@@ -1319,7 +1325,7 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
 
                     return (
                       <div key={field.key}>
-                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                        <label className="block text-xs font-bold text-slate-300 mb-1.5">
                           {label}
                           {field.required && <span className="text-rose-500 ms-1">*</span>}
                         </label>
@@ -1330,7 +1336,7 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
                             value={draft[field.key] ?? ''}
                             onChange={(event) => setDraft((value) => ({ ...value, [field.key]: event.target.value }))}
                             placeholder={placeholder}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-500/20"
+                            className="w-full rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-orange-500/30"
                           />
                         ) : field.type === 'select' ? (
                           <select
@@ -1338,7 +1344,7 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
                             onChange={(event) => setDraft((value) => ({ ...value, [field.key]: event.target.value }))}
                             aria-label={label}
                             title={label}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20"
+                            className="w-full rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-orange-500/30"
                           >
                             {options.map((option) => (
                               <option key={option.value} value={option.value}>
@@ -1352,7 +1358,7 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
                             onChange={(event) => setDraft((value) => ({ ...value, [field.key]: event.target.value }))}
                             aria-label={label}
                             title={label}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20"
+                            className="w-full rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-orange-500/30"
                           >
                             <option value="true">{isRtl ? 'نعم' : 'Yes'}</option>
                             <option value="false">{isRtl ? 'لا' : 'No'}</option>
@@ -1363,7 +1369,7 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
                             value={draft[field.key] ?? ''}
                             onChange={(event) => setDraft((value) => ({ ...value, [field.key]: event.target.value }))}
                             placeholder={placeholder}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-500/20"
+                            className="w-full rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-orange-500/30"
                           />
                         )}
                       </div>
@@ -1373,14 +1379,14 @@ export default function SystemAdminView({ language, onAddNotification }: SystemA
                   <div className="pt-2 flex items-center gap-3">
                     <button
                       type="submit"
-                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white hover:bg-slate-800"
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-orange-600 px-4 py-3 text-sm font-black text-white hover:bg-orange-500"
                     >
                       <Check className="w-4 h-4" />
                       {editingId ? (isRtl ? 'حفظ التعديل' : 'Save changes') : (isRtl ? 'إنشاء السجل' : 'Create record')}
                     </button>
                   </div>
 
-                  <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-[11px] leading-6 text-amber-950">
+                  <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-[11px] leading-6 text-amber-200">
                     <div className="flex items-center gap-2 font-bold mb-1">
                       <AlertCircle className="w-4 h-4" />
                       {isRtl ? 'ملاحظة' : 'Note'}

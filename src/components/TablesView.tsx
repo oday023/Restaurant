@@ -151,7 +151,7 @@ export default function TablesView({ branchId, language, onAddNotification }: Ta
       <div className="flex-1 space-y-6">
         
         {/* Navigation tabs */}
-        <div className="flex flex-col sm:flex-row justify-between items-center glass-panel bg-[#0d121f]/50 p-4 rounded-3xl border border-slate-800/80 shadow-[0_10px_40px_rgba(0,0,0,0.5)] gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-center glass-panel panel-soft p-4 rounded-3xl border border-slate-800/80 shadow-[0_10px_24px_rgba(0,0,0,0.22)] gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-orange-500/10 text-orange-500 rounded-xl border border-orange-500/20">
               <Landmark className="w-5 h-5 animate-pulse" />
@@ -235,7 +235,7 @@ export default function TablesView({ branchId, language, onAddNotification }: Ta
       {/* RIGHT SIDE DETAILS AND QR GENERATOR PANEL */}
       <div className="w-full lg:w-80">
         {activeDrawerTable ? (
-          <div className="glass-panel bg-[#0d121f]/50 rounded-3xl p-5 border border-slate-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-5 animate-fade-in relative overflow-hidden">
+          <div className="glass-panel panel-soft rounded-3xl p-5 border border-slate-800/80 shadow-[0_10px_24px_rgba(0,0,0,0.22)] space-y-5 animate-fade-in relative overflow-hidden">
             <div className="absolute top-0 left-0 w-32 h-32 bg-orange-500/[0.02] rounded-full blur-3xl pointer-events-none"></div>
             
             <div className="flex justify-between items-start border-b border-slate-850/60 pb-4">

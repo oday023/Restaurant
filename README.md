@@ -61,6 +61,10 @@
 
 ## 🚀 دليل التشغيل المحلي والنشر السحابي (Quick Start & Deployment)
 
+### 🔗 رابط المشروع على GitHub
+
+- Repository: https://github.com/oday023/Restaurant.git
+
 ### 1️⃣ التشغيل والتطوير المحلي (Local Development)
 
 قم باستنساخ المستودع والدخول للمجلد الرئيسي ثم تثبيت الحزم وتشغيل خادم التطوير:

@@ -154,7 +154,7 @@ export default function DashboardView({ tenant, language }: DashboardViewProps) 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* KPI 1: Gross Sales */}
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/75 p-6 rounded-3xl shadow-xl relative overflow-hidden group hover:border-orange-500/35 transition-all duration-300">
+        <div className="glass-panel panel-soft border border-slate-800/75 p-6 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] relative overflow-hidden group hover:border-orange-500/35 transition-all duration-300">
           <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-orange-500/10 transition"></div>
           <div className="flex justify-between items-start">
             <div className="space-y-1.5">
@@ -176,7 +176,7 @@ export default function DashboardView({ tenant, language }: DashboardViewProps) 
         </div>
 
         {/* KPI 2: Completed Orders */}
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/75 p-6 rounded-3xl shadow-xl relative overflow-hidden group hover:border-amber-500/35 transition-all duration-300">
+        <div className="glass-panel panel-soft border border-slate-800/75 p-6 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] relative overflow-hidden group hover:border-amber-500/35 transition-all duration-300">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/10 transition"></div>
           <div className="flex justify-between items-start">
             <div className="space-y-1.5">
@@ -198,7 +198,7 @@ export default function DashboardView({ tenant, language }: DashboardViewProps) 
         </div>
 
         {/* KPI 3: Average Ticket basket */}
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/75 p-6 rounded-3xl shadow-xl relative overflow-hidden group hover:border-amber-500/35 transition-all duration-300">
+        <div className="glass-panel panel-soft border border-slate-800/75 p-6 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] relative overflow-hidden group hover:border-amber-500/35 transition-all duration-300">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/10 transition"></div>
           <div className="flex justify-between items-start">
             <div className="space-y-1.5">
@@ -220,7 +220,7 @@ export default function DashboardView({ tenant, language }: DashboardViewProps) 
         </div>
 
         {/* KPI 4: Stock warning materials */}
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/75 p-6 rounded-3xl shadow-xl relative overflow-hidden group hover:border-rose-500/35 transition-all duration-300">
+        <div className="glass-panel panel-soft border border-slate-800/75 p-6 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] relative overflow-hidden group hover:border-rose-500/35 transition-all duration-300">
           <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-rose-500/10 transition"></div>
           <div className="flex justify-between items-start">
             <div className="space-y-1.5">
@@ -247,7 +247,7 @@ export default function DashboardView({ tenant, language }: DashboardViewProps) 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Custom SVG Line Chart block (Gross monthly SaaS reports) */}
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/75 p-6 rounded-3xl shadow-xl lg:col-span-2 group hover:border-slate-750 transition-all">
+        <div className="glass-panel panel-soft border border-slate-800/75 p-6 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] lg:col-span-2 group hover:border-slate-750 transition-all">
           <div className="flex justify-between items-center pb-4 border-b border-slate-850 mb-5">
             <div>
               <h3 className="font-extrabold text-white text-sm">
@@ -320,7 +320,7 @@ export default function DashboardView({ tenant, language }: DashboardViewProps) 
         </div>
 
         {/* Top selling foods bar chart visualization */}
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/75 p-6 rounded-3xl shadow-xl flex flex-col justify-between group hover:border-slate-750 transition-all">
+        <div className="glass-panel panel-soft border border-slate-800/75 p-6 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] flex flex-col justify-between group hover:border-slate-750 transition-all">
           <div>
             <div className="pb-3 border-b border-slate-850 mb-5">
               <h3 className="font-extrabold text-white text-sm">
@@ -373,7 +373,7 @@ export default function DashboardView({ tenant, language }: DashboardViewProps) 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Cash Register Journal of ledger entries */}
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/75 p-6 rounded-3xl shadow-xl group hover:border-slate-750 transition-all">
+        <div className="glass-panel panel-soft border border-slate-800/75 p-6 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] group hover:border-slate-750 transition-all">
           <div className="flex justify-between items-center pb-4 border-b border-slate-850 mb-5 font-sans">
             <div>
               <h3 className="font-extrabold text-white text-sm">
@@ -429,7 +429,7 @@ export default function DashboardView({ tenant, language }: DashboardViewProps) 
         </div>
 
         {/* Branch statistics sheet */}
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/75 p-6 rounded-3xl shadow-xl group hover:border-slate-750 transition-all">
+        <div className="glass-panel panel-soft border border-slate-800/75 p-6 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] group hover:border-slate-750 transition-all">
           <div className="pb-4 border-b border-slate-850 mb-5">
             <h3 className="font-extrabold text-white text-sm">
               {isRtl ? 'مستويات كفاءة ومعادلات الفروع' : 'Corporate Store Performance Indexes'}

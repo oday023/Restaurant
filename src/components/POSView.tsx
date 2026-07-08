@@ -409,7 +409,7 @@ export default function POSView({ tenant, branch, language, onAddNotification }:
             <button
               type="button"
               onClick={() => setActiveTab2('new_order')}
-              className={`py-2.5 px-2 text-center rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === 'new_order' ? 'bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+              className={`py-2.5 px-2 text-center rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === 'new_order' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-900/70'}`}
             >
               <ShoppingBag className="w-4 h-4 shrink-0" />
               {isRtl ? 'طلب جديد' : 'New Ticket'}
@@ -420,7 +420,7 @@ export default function POSView({ tenant, branch, language, onAddNotification }:
                 setActiveTab2('active_orders');
                 setAllOrders(StorageService.getOrders(tenant.id, branch.id));
               }}
-              className={`py-2.5 px-2 text-center rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 relative ${activeTab === 'active_orders' ? 'bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+              className={`py-2.5 px-2 text-center rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 relative ${activeTab === 'active_orders' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-900/70'}`}
             >
               <Clock className="w-4 h-4 shrink-0 animate-pulse text-orange-400" />
               {isRtl ? 'الطلبات النشطة' : 'Active Bills'}
@@ -706,7 +706,7 @@ export default function POSView({ tenant, branch, language, onAddNotification }:
               <button
                 type="button"
                 onClick={() => setIsPaymentOpen(true)}
-                className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 py-3.5 rounded-2xl text-xs font-black text-white active:scale-95 transition-all shadow-[0_4px_20px_rgba(249,115,22,0.3)] cursor-pointer"
+                className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-500 py-3.5 rounded-2xl text-xs font-black text-white active:scale-95 transition-all shadow-sm cursor-pointer"
               >
                 <CreditCard className="w-4 h-4 shrink-0" />
                 {isRtl ? 'دفع وتسوية' : 'Pay & Complete'}

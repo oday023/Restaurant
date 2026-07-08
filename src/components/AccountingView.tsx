@@ -227,7 +227,7 @@ export default function AccountingView({ tenant, branch, language, onAddNotifica
       {/* Top Balanced Metrics Ribbon */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/80 p-5 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.4)] space-y-2 relative overflow-hidden">
+        <div className="glass-panel panel-soft border border-slate-800/80 p-5 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] space-y-2 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl"></div>
           <div className="flex items-center gap-2 text-slate-400">
             <TrendingUp className="w-4 h-4 text-emerald-450" />
@@ -238,7 +238,7 @@ export default function AccountingView({ tenant, branch, language, onAddNotifica
           </p>
         </div>
 
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/80 p-5 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.4)] space-y-2 relative overflow-hidden">
+        <div className="glass-panel panel-soft border border-slate-800/80 p-5 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] space-y-2 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/5 rounded-full blur-xl"></div>
           <div className="flex items-center gap-2 text-slate-400">
             <TrendingDown className="w-4 h-4 text-rose-450" />
@@ -249,7 +249,7 @@ export default function AccountingView({ tenant, branch, language, onAddNotifica
           </p>
         </div>
 
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/80 p-5 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.4)] space-y-2 relative overflow-hidden">
+        <div className="glass-panel panel-soft border border-slate-800/80 p-5 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] space-y-2 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-16 h-16 bg-orange-500/5 rounded-full blur-xl"></div>
           <div className="flex items-center gap-2 text-slate-400">
             <Wallet className="w-4 h-4 text-orange-450" />
@@ -260,7 +260,7 @@ export default function AccountingView({ tenant, branch, language, onAddNotifica
           </p>
         </div>
 
-        <div className="glass-panel bg-[#090d16]/70 border border-slate-800/80 p-5 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.4)] space-y-2 relative overflow-hidden">
+        <div className="glass-panel panel-soft border border-slate-800/80 p-5 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] space-y-2 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/[0.03] rounded-full blur-xl"></div>
           <div className="flex items-center gap-2 text-slate-400">
             <Scale className="w-4 h-4 text-orange-500 animate-spin" style={{ animationDuration: '6s' }} />
@@ -275,7 +275,7 @@ export default function AccountingView({ tenant, branch, language, onAddNotifica
       </div>
 
       {/* SUB-TABS SELECTOR DECK */}
-      <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/80 p-2.5 rounded-2xl flex flex-wrap gap-2 shadow-[0_10px_30px_rgba(0,0,0,0.4)]">
+      <div className="glass-panel panel-soft border border-slate-800/80 p-2.5 rounded-2xl flex flex-wrap gap-2 shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
         <button
           onClick={() => setActiveSubTab('ledger')}
           className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${activeSubTab === 'ledger' ? 'bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-900/40'}`}
@@ -320,7 +320,7 @@ export default function AccountingView({ tenant, branch, language, onAddNotifica
       {/* SUB-VIEW CONDITIONAL RENDERERS */}
 
       {activeSubTab === 'ledger' && (
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/80 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-4">
+        <div className="glass-panel panel-soft border border-slate-800/80 rounded-3xl p-5 shadow-[0_10px_24px_rgba(0,0,0,0.22)] space-y-4">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pb-3 border-b border-slate-850/60 mb-3">
             <div>
               <h3 className="font-extrabold text-white text-xs">
@@ -385,7 +385,7 @@ export default function AccountingView({ tenant, branch, language, onAddNotifica
       )}
 
       {activeSubTab === 'chart' && (
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/80 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-4">
+        <div className="glass-panel panel-soft border border-slate-800/80 rounded-3xl p-5 shadow-[0_10px_24px_rgba(0,0,0,0.22)] space-y-4">
           <div>
             <h4 className="font-extrabold text-xs text-white uppercase tracking-wider">{isRtl ? 'شجرة الحسابات الموحدة ونظام الترميز (Chart of Accounts)' : 'Unified Chart of Accounts (COA)'}</h4>
             <p className="text-[10px] text-slate-400">{isRtl ? 'نظام المحاسبة السحابي ثنائي القيد للشركة لتنظيم الأصول والخصوم والملكيات والمصروفات' : 'ERP system account nodes mapping financial assets, liabilities, equities, revenues, and expenses'}</p>
@@ -426,7 +426,7 @@ export default function AccountingView({ tenant, branch, language, onAddNotifica
       )}
 
       {activeSubTab === 'journal' && (
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/80 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-4">
+        <div className="glass-panel panel-soft border border-slate-800/80 rounded-3xl p-5 shadow-[0_10px_24px_rgba(0,0,0,0.22)] space-y-4">
           <div>
             <h4 className="font-extrabold text-xs text-white uppercase tracking-wider">{isRtl ? 'دفتر القيود اليومية المحاسبية المزدوجة' : 'Balanced Double-Entry Journal Book'}</h4>
             <p className="text-[10px] text-slate-400">{isRtl ? 'كل قيد مالي يسجل طرفين متساويين: مدين (Debit) ودائن (Credit) لضمان الصفر المحاسبي المتوازن' : 'Audit logs tracking precise zero-sum debits and credits per business action'}</p>
@@ -466,7 +466,7 @@ export default function AccountingView({ tenant, branch, language, onAddNotifica
       )}
 
       {activeSubTab === 'trial' && (
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/80 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-4">
+        <div className="glass-panel panel-soft border border-slate-800/80 rounded-3xl p-5 shadow-[0_10px_24px_rgba(0,0,0,0.22)] space-y-4">
           <div>
             <h4 className="font-extrabold text-xs text-white uppercase tracking-wider">{isRtl ? 'ميزان المراجعة الحسابي المتوازن للفرع' : 'Corporate Trial Balance Ledger'}</h4>
             <p className="text-[10px] text-slate-400">{isRtl ? 'قائمة الحسابات الختامية مجمعة في أعمدة المدين والدائن للتحقق من تكافؤ العمليات وصحة التقارير' : 'Balanced sheet mapping absolute debits and credits from Chart of Accounts'}</p>
@@ -508,7 +508,7 @@ export default function AccountingView({ tenant, branch, language, onAddNotifica
         <div className="space-y-6">
           
           {/* Income Statement: Profit & Loss */}
-          <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/80 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-4">
+          <div className="glass-panel panel-soft border border-slate-800/80 rounded-3xl p-5 shadow-[0_10px_24px_rgba(0,0,0,0.22)] space-y-4">
             <div className="flex justify-between items-center border-b border-slate-850/60 pb-3">
               <div>
                 <h4 className="font-extrabold text-xs text-white uppercase tracking-wider">{isRtl ? 'قائمة الأرباح والخسائر (Income Statement / P&L)' : 'Income Statement (Profit & Loss / P&L)'}</h4>
@@ -555,7 +555,7 @@ export default function AccountingView({ tenant, branch, language, onAddNotifica
           </div>
 
           {/* Balance Sheet Preview */}
-          <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/80 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-4">
+          <div className="glass-panel panel-soft border border-slate-800/80 rounded-3xl p-5 shadow-[0_10px_24px_rgba(0,0,0,0.22)] space-y-4">
             <div className="flex justify-between items-center border-b border-slate-850/60 pb-3">
               <div>
                 <h4 className="font-extrabold text-xs text-white uppercase tracking-wider">{isRtl ? 'الميزانية العمومية المتوازنة (Balance Sheet)' : 'Balanced Sheet (Assets, Liabilities & Equity)'}</h4>

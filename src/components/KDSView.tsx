@@ -146,15 +146,15 @@ export default function KDSView({ tenant, language, onAddNotification }: KDSView
     <div className="bg-transparent rounded-3xl p-1 md:p-2 relative min-h-[82vh] animate-fade-in select-none">
       
       {/* 1. Header controls */}
-      <div className="flex flex-col lg:flex-row gap-4 items-center justify-between pb-5 border-b border-slate-850/60 mb-6 text-white">
+      <div className="flex flex-col lg:flex-row gap-4 items-center justify-between pb-5 border-b border-slate-800/80 mb-6 text-white">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-orange-500/10 text-orange-500 rounded-2xl border border-orange-500/20">
-            <ChefHat className="w-6 h-6 animate-pulse" />
+          <div className="p-3 bg-slate-900/80 text-orange-500 rounded-2xl border border-slate-800">
+            <ChefHat className="w-6 h-6" />
           </div>
           <div>
             <h2 className="text-base font-black flex items-center gap-2">
               {isRtl ? 'نظام المطبخ وشاشة التحضير KDS' : 'Kitchen Display System (KDS)'}
-              <span className="text-[10px] bg-rose-500/10 border border-rose-500/20 text-rose-400 font-extrabold px-2.5 py-0.5 rounded-full shadow-inner animate-pulse">
+              <span className="text-[10px] bg-slate-900 border border-slate-800 text-slate-300 font-extrabold px-2.5 py-0.5 rounded-full">
                 {orders.filter((o) => o.status === 'new' || o.status === 'preparing').length} {isRtl ? 'قيد الانتظار' : 'Pending'}
               </span>
             </h2>
@@ -170,7 +170,7 @@ export default function KDSView({ tenant, language, onAddNotification }: KDSView
           <button
             type="button"
             onClick={forceRefresh}
-            className="p-2.5 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-300 transition-all flex items-center gap-1.5 text-xs font-black cursor-pointer shadow-md active:scale-95"
+            className="p-2.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 transition-all flex items-center gap-1.5 text-xs font-black cursor-pointer shadow-sm active:scale-95"
           >
             <RefreshCw className="w-4 h-4 text-orange-500" />
             {isRtl ? 'مزامنة سريعة' : 'Sync'}
@@ -179,25 +179,25 @@ export default function KDSView({ tenant, language, onAddNotification }: KDSView
           <div className="bg-slate-950/60 p-1.5 rounded-2xl border border-slate-800 flex gap-1 shadow-inner">
             <button
               onClick={() => setFilterType('all')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${filterType === 'all' ? 'bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-md' : 'text-slate-300 hover:text-white'}`}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${filterType === 'all' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-900/70'}`}
             >
               {isRtl ? 'الكل' : 'All'}
             </button>
             <button
               onClick={() => setFilterType('dine_in')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${filterType === 'dine_in' ? 'bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-md' : 'text-slate-300 hover:text-white'}`}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${filterType === 'dine_in' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-900/70'}`}
             >
               {isRtl ? 'صالة داخلي' : 'Dine'}
             </button>
             <button
               onClick={() => setFilterType('takeaway')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${filterType === 'takeaway' ? 'bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-md' : 'text-slate-300 hover:text-white'}`}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${filterType === 'takeaway' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-900/70'}`}
             >
               {isRtl ? 'سفري' : 'Takeaway'}
             </button>
             <button
               onClick={() => setFilterType('delivery')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${filterType === 'delivery' ? 'bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-md' : 'text-slate-300 hover:text-white'}`}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${filterType === 'delivery' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-900/70'}`}
             >
               {isRtl ? 'توصيل' : 'Delivery'}
             </button>
@@ -224,10 +224,10 @@ export default function KDSView({ tenant, language, onAddNotification }: KDSView
             
             // Color based on urgency state
             const urgencyBg = timeInfo.isOverdue 
-              ? 'bg-[#1b0a0e]/90 border-rose-500/65 shadow-[0_4px_30px_rgba(239,68,68,0.2)] animate-pulse' 
+              ? 'bg-[#1a1114]/90 border-rose-500/40' 
               : order.status === 'preparing'
-              ? 'bg-[#18110b]/90 border-amber-500/50 shadow-[0_4px_30px_rgba(245,158,11,0.15)]'
-              : 'bg-[#0d121f]/90 border-slate-800 hover:border-slate-750';
+              ? 'bg-[#17141a]/90 border-amber-500/40'
+              : 'bg-[#111827]/90 border-slate-800 hover:border-slate-700';
 
             return (
               <div 
@@ -297,7 +297,7 @@ export default function KDSView({ tenant, language, onAddNotification }: KDSView
                     <button
                       type="button"
                       onClick={() => handleUpdateStatus(order.id, 'preparing')}
-                      className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-orange-500/30 text-slate-300 hover:text-white font-extrabold transition-all duration-200 cursor-pointer active:scale-95"
+                      className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-extrabold transition-all duration-200 cursor-pointer active:scale-95"
                     >
                       <ChefHat className="w-4 h-4 text-orange-500" />
                       {isRtl ? 'اقبل وابدأ الطبخ' : 'Accept & Start Preparation'}
@@ -308,7 +308,7 @@ export default function KDSView({ tenant, language, onAddNotification }: KDSView
                     <button
                       type="button"
                       onClick={() => handleUpdateStatus(order.id, 'ready')}
-                      className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-black transition-all duration-200 cursor-pointer active:scale-95 shadow-md"
+                      className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs bg-orange-600 hover:bg-orange-500 text-white font-black transition-all duration-200 cursor-pointer active:scale-95 shadow-sm"
                     >
                       <Flame className="w-4 h-4 animate-bounce" />
                       {isRtl ? 'اكتمل الطبخ وجاهز للتسليم' : 'Mark as Ready to Serve'}

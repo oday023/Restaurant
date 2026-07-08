@@ -170,7 +170,7 @@ export default function QRMenuView({ tenant, tables, language, onAddNotification
     <div className="flex flex-col lg:flex-row gap-6 bg-transparent rounded-3xl p-1 md:p-2 min-h-[82vh] text-slate-200 select-none animate-fade-in">
       
       {/* LEFT CONTROL RAIL: Table simulation switcher */}
-      <div className="w-full lg:w-72 glass-panel bg-[#0d121f]/50 border border-slate-800/80 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col justify-start relative overflow-hidden group">
+      <div className="w-full lg:w-72 glass-panel bg-[#111827] border border-slate-800/80 rounded-3xl p-5 shadow-[0_10px_24px_rgba(0,0,0,0.24)] flex flex-col justify-start relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl pointer-events-none"></div>
         <h4 className="text-xs font-black text-white uppercase tracking-wider mb-2 flex items-center gap-1.5">
           <Sparkles className="w-4 h-4 text-orange-500 animate-pulse" />
@@ -191,7 +191,7 @@ export default function QRMenuView({ tenant, tables, language, onAddNotification
                 setActiveTableId(t.id);
                 setSubmittedStatusView(null);
               }}
-              className={`py-2 text-center rounded-xl font-mono text-xs font-black border transition-all cursor-pointer active:scale-95 ${activeTableId === t.id ? 'bg-gradient-to-r from-orange-600 to-amber-500 text-white border-transparent shadow-md' : 'bg-slate-900/60 text-slate-400 border-slate-850 hover:border-slate-750 hover:text-white'}`}
+              className={`py-2 text-center rounded-xl font-mono text-xs font-black border transition-all cursor-pointer active:scale-95 ${activeTableId === t.id ? 'bg-orange-600 text-white border-transparent shadow-sm' : 'bg-slate-900/80 text-slate-300 border-slate-800 hover:border-slate-700 hover:text-white'}`}
             >
               {t.number}
             </button>
@@ -402,7 +402,7 @@ export default function QRMenuView({ tenant, tables, language, onAddNotification
               <button
                 type="button"
                 onClick={() => setIsCartOpen(true)}
-                className="w-full bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-black py-3 rounded-2xl shadow-[0_4px_20px_rgba(249,115,22,0.4)] flex items-center justify-between px-4 text-xs transition cursor-pointer active:scale-95"
+                className="w-full bg-orange-600 hover:bg-orange-500 text-white font-black py-3 rounded-2xl shadow-sm flex items-center justify-between px-4 text-xs transition cursor-pointer active:scale-95"
               >
                 <div className="flex items-center gap-2">
                   <div className="bg-white/15 p-1.5 rounded-lg relative border border-white/10">
@@ -569,7 +569,7 @@ export default function QRMenuView({ tenant, tables, language, onAddNotification
                   <button
                     type="button"
                     onClick={handleSubmitQRAction}
-                    className="w-full bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-black py-3.5 rounded-2xl text-xs flex justify-center items-center gap-1.5 shadow-lg shadow-orange-500/20 active:scale-95 transition-all cursor-pointer"
+                    className="w-full bg-orange-600 hover:bg-orange-500 text-white font-black py-3.5 rounded-2xl text-xs flex justify-center items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
                   >
                     <Send className="w-4 h-4 shrink-0" />
                     {isRtl ? '🔥 إرسال الطلبية للمطبخ فوراً' : '🔥 Submit Kitchen Order'}

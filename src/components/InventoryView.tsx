@@ -137,7 +137,7 @@ export default function InventoryView({ tenantId, language, onAddNotification }:
     <div className="space-y-6 animate-fade-in text-slate-200 select-none">
       
       {/* 1. Header with custom tabs switcher */}
-      <div className="flex flex-col md:flex-row justify-between items-center glass-panel bg-[#0d121f]/50 p-4 rounded-3xl border border-slate-800/80 shadow-[0_10px_40px_rgba(0,0,0,0.5)] gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-center glass-panel panel-soft p-4 rounded-3xl border border-slate-800/80 shadow-[0_10px_24px_rgba(0,0,0,0.22)] gap-4">
         <div className="flex gap-1.5 overflow-x-auto w-full md:w-auto scrollbar-none">
           <button
             onClick={() => setSubTab('materials')}
@@ -180,7 +180,7 @@ export default function InventoryView({ tenantId, language, onAddNotification }:
 
       {/* TAB A: General materials list */}
       {subTab === 'materials' && (
-        <div className="glass-panel bg-[#0d121f]/50 border border-slate-800/80 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5 relative overflow-hidden">
+        <div className="glass-panel panel-soft border border-slate-800/80 rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.22)] p-5 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl pointer-events-none"></div>
           
           <div className="pb-3 border-b border-slate-850/60 mb-4 text-slate-300">
