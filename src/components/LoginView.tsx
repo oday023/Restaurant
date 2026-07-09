@@ -88,6 +88,16 @@ export default function LoginView({
       return;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Authentication failed';
+      const isInvalidCredentials = /invalid username|invalid email|password/i.test(message);
+      const userMessageAr = isInvalidCredentials
+        ? 'اسم المستخدم أو كلمة المرور غير صحيحة. حاول مرة أخرى.'
+        : 'تعذر تسجيل الدخول حالياً. تحقق من اتصال الإنترنت وحاول مرة أخرى.';
+      const userMessageEn = isInvalidCredentials
+        ? 'Invalid username or password. Please try again.'
+        : 'Unable to sign in right now. Check your network and try again.';
+
+      onAddNotification(userMessageAr, userMessageEn, 'warning');
+
       if (import.meta.env.DEV) {
         console.warn('Login failed', message);
       }

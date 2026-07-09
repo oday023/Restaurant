@@ -620,43 +620,59 @@ export class StorageService {
   public static async login(username: string, password: string): Promise<Employee> {
     if (isSupabaseConfigured && supabase) {
       try {
+        let loginEmail = username;
+
+        if (!username.includes('@')) {
+          const { data: employeeMatch, error: lookupError } = await supabase
+            .from('employees')
+            .select('email')
+            .or(`username.eq.${username},email.eq.${username}`)
+            .limit(1)
+            .single();
+
+          if (!lookupError && employeeMatch?.email) {
+            loginEmail = employeeMatch.email;
+          }
+        }
+
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: username,
+          email: loginEmail,
           password,
         });
 
         if (authError) {
-          throw new Error(authError.message || "Invalid username or password.");
+          throw new Error(authError.message || 'Invalid username or password.');
         }
 
         if (authData?.user) {
           const { data: empData, error: empError } = await supabase
-            .from("employees")
-            .select("*")
-            .eq("email", username)
+            .from('employees')
+            .select('*')
+            .or(`username.eq.${username},email.eq.${loginEmail}`)
+            .limit(1)
             .single();
 
           if (empError) {
-            throw new Error(empError.message || "Unable to load employee profile.");
+            throw new Error(empError.message || 'Unable to load employee profile.');
           }
 
           if (empData) {
             const emp = toEmployee(empData);
-            this.set("employees", [emp]);
-            if (typeof window !== "undefined" && authData.session?.access_token) {
-              window.localStorage.setItem("restohub_token", authData.session.access_token);
+            this.set('employees', [emp]);
+            if (typeof window !== 'undefined' && authData.session?.access_token) {
+              window.localStorage.setItem('restohub_token', authData.session.access_token);
             }
             await this.loadProtectedData(emp);
             return emp;
           }
         }
 
-        throw new Error("Invalid username or password.");
+        throw new Error('Invalid username or password.');
       } catch (err) {
         if (import.meta.env.DEV) {
-          console.warn("Supabase auth login failed:", err);
+          console.warn('Supabase auth login failed:', err);
         }
-        throw err instanceof Error ? err : new Error("Invalid username or password.");
+        throw err instanceof Error ? err : new Error('Invalid username or password.');
       }
     }
 

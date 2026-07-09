@@ -1016,9 +1016,9 @@ INSERT INTO platform_admins (id, full_name, username, email, password_hash, role
 VALUES (
   'c0000001-0000-0000-0000-000000000001',
   'المدير العام',
-  'synasma9',
-  'synasma9@gmail.com',
-  crypt('Plmoknijb098.', gen_salt('bf')),
+  'odaisayedissa@gmail.com',
+  'odaisayedissa@gmail.com',
+  crypt('oday2003', gen_salt('bf')),
   'platform_super_admin',
   TRUE
 ) ON CONFLICT (username) DO NOTHING;
