@@ -811,6 +811,49 @@ export class StorageService {
 
     if (isSupabaseConfigured && supabase) {
       try {
+        // First, try platform admin login RPC
+        try {
+          const { data: adminData, error: adminError } = await supabase.rpc('verify_platform_admin_login', {
+            p_username: normalizedUsername,
+            p_password: password,
+          });
+
+          const adminRow = Array.isArray(adminData) ? adminData[0] : adminData;
+          if (!adminError && adminRow) {
+            // Persist session as platform admin and return a small Employee-like object
+            this.persistSessionToken({
+              sub: adminRow.id,
+              email: adminRow.email,
+              role: adminRow.role,
+              username: adminRow.username,
+              tenant_id: null,
+              jwt_tenant_id: null,
+            });
+
+            const adminAsEmployee = {
+              id: String(adminRow.id),
+              tenantId: '',
+              branchId: '',
+              name: String(adminRow.full_name || adminRow.username || ''),
+              email: String(adminRow.email || ''),
+              role: (adminRow.role || 'platform_super_admin') as Employee['role'],
+              phone: '',
+              salary: 0,
+              attendanceHistory: [],
+              performanceRating: 5,
+              status: (adminRow.is_active ? 'active' : 'suspended') as 'active' | 'suspended',
+              username: String(adminRow.username || adminRow.email || ''),
+            } as Employee;
+
+            this.set('employees', [adminAsEmployee]);
+            return adminAsEmployee;
+          }
+        } catch (e) {
+          // ignore admin RPC errors and fall through to employee RPC
+          if (import.meta.env.DEV) console.warn('Platform admin RPC check failed, trying employee RPC:', e);
+        }
+
+        // Then try employee login RPC
         const { data, error } = await supabase.rpc('verify_employee_login', {
           p_username: normalizedUsername,
           p_password: password,
@@ -849,7 +892,7 @@ export class StorageService {
         throw new Error('Invalid username or password.');
       } catch (err) {
         if (import.meta.env.DEV) {
-          console.warn('RPC employee login failed:', err);
+          console.warn('RPC login failed:', err);
         }
         if (err instanceof Error && err.message.includes('Too many failed attempts')) {
           throw err;

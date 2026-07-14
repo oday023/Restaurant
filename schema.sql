@@ -16,7 +16,8 @@
 --  EXTENSIONS
 -- ========================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";   -- تحسين: بحث سريع وتقريبي (fuzzy search)
 
 -- ========================
@@ -212,6 +213,9 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.check_login_attempt_lock(text, text) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.record_login_attempt(text, text, boolean) TO anon, authenticated;
+
+-- Allow runtime usage of the pgcrypto extension schema from typical DB roles
+GRANT USAGE ON SCHEMA extensions TO postgres, anon, authenticated, service_role;
 
 -- ============================================================
 --  4. ATTENDANCE RECORDS (سجلات الحضور والغياب)
@@ -610,7 +614,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
     v_employee_id uuid;
@@ -641,22 +645,22 @@ BEGIN
         COALESCE(p_status, 'active')
     ) RETURNING id INTO v_employee_id;
 
-    RETURN QUERY
-    SELECT e.id,
-           e.tenant_id,
-           e.branch_id,
-           e.name,
-           e.email,
-           e.username,
-           e.role,
-           e.phone,
-           e.salary,
-           e.performance_rating,
-           e.status,
-           e.created_at,
-           e.updated_at
-    FROM public.employees e
-    WHERE e.id = v_employee_id;
+        RETURN QUERY
+        SELECT e.id,
+            e.tenant_id,
+            e.branch_id,
+            e.name::text,
+            e.email::text,
+            e.username::text,
+            e.role::text,
+            e.phone,
+            e.salary,
+            e.performance_rating,
+            e.status::text,
+            e.created_at,
+            e.updated_at
+        FROM public.employees e
+        WHERE e.id = v_employee_id;
 END;
 $$;
 
@@ -680,15 +684,12 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
-    v_employee RECORD;
+    v_employee public.employees%ROWTYPE;
 BEGIN
-    SELECT e.id, e.tenant_id, e.branch_id, e.name, e.email, e.username, e.role, e.phone,
-           e.salary, e.performance_rating, e.status, e.created_at, e.updated_at
-    INTO v_employee
-    FROM public.employees e
+    SELECT e.* INTO v_employee FROM public.employees e
     WHERE e.status = 'active'
       AND (e.username = p_username OR e.email = p_username)
       AND e.password_hash IS NOT NULL
@@ -696,7 +697,7 @@ BEGIN
     ORDER BY e.created_at DESC
     LIMIT 1;
 
-    IF v_employee IS NULL THEN
+    IF v_employee.id IS NULL THEN
         RETURN;
     END IF;
 
@@ -704,65 +705,37 @@ BEGIN
     SELECT v_employee.id,
            v_employee.tenant_id,
            v_employee.branch_id,
-           v_employee.name,
-           v_employee.email,
-           v_employee.username,
-           v_employee.role,
+           v_employee.name::text,
+           v_employee.email::text,
+           v_employee.username::text,
+           v_employee.role::text,
            v_employee.phone,
            v_employee.salary,
            v_employee.performance_rating,
-           v_employee.status,
+           v_employee.status::text,
            v_employee.created_at,
            v_employee.updated_at;
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.verify_platform_admin_login(p_username text, p_password text)
+CREATE OR REPLACE FUNCTION verify_platform_admin_login(p_username text, p_password text)
 RETURNS TABLE (
-    id uuid,
-    full_name text,
-    username text,
-    email text,
-    role text,
-    is_active boolean,
-    last_login_at timestamptz,
-    created_at timestamptz
+    id uuid, full_name text, username text, email text, role text,
+    is_active boolean, last_login_at timestamptz, created_at timestamptz
 )
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-    v_admin RECORD;
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
+DECLARE v_admin platform_admins%ROWTYPE;
 BEGIN
-    SELECT pa.id, pa.full_name, pa.username, pa.email, pa.role, pa.is_active, pa.last_login_at, pa.created_at
-    INTO v_admin
-    FROM public.platform_admins pa
-    WHERE pa.is_active = TRUE
-      AND (pa.username = p_username OR pa.email = p_username)
-      AND crypt(p_password, pa.password_hash) = pa.password_hash
-    ORDER BY pa.created_at DESC
-    LIMIT 1;
-
-    IF v_admin IS NULL THEN
-        RETURN;
-    END IF;
-
-    UPDATE public.platform_admins
-    SET last_login_at = NOW(), failed_login_attempts = 0
-    WHERE id = v_admin.id;
-
-    RETURN QUERY
-    SELECT v_admin.id,
-           v_admin.full_name,
-           v_admin.username,
-           v_admin.email,
-           v_admin.role,
-           v_admin.is_active,
-           v_admin.last_login_at,
-           v_admin.created_at;
-END;
-$$;
+    SELECT pa.* INTO v_admin FROM public.platform_admins pa
+    WHERE pa.is_active = TRUE AND (pa.username = p_username OR pa.email = p_username)
+        AND crypt(p_password, pa.password_hash) = pa.password_hash
+    ORDER BY pa.created_at DESC LIMIT 1;
+    IF v_admin.id IS NULL THEN RETURN; END IF;
+    UPDATE public.platform_admins pa SET last_login_at = NOW(), failed_login_attempts = 0
+    WHERE pa.id = v_admin.id;
+    RETURN QUERY SELECT v_admin.id, v_admin.full_name::text, v_admin.username::text,
+        v_admin.email::text, v_admin.role::text, v_admin.is_active, NOW()::timestamptz, v_admin.created_at;
+END; $$;
 
 GRANT EXECUTE ON FUNCTION public.verify_employee_login(text, text) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.verify_platform_admin_login(text, text) TO anon, authenticated;
@@ -1289,16 +1262,11 @@ GROUP BY t.id;
 -- 1. أدمن المنصة السيادي (SaaS Platform Super Admin)
 -- WARNING: This default super-admin seed is for initial setup only.
 -- Change the password immediately after the first production run via the platform admin UI or a direct password update command.
-INSERT INTO platform_admins (id, full_name, username, email, password_hash, role, is_active)
-VALUES (
-  'c0000001-0000-0000-0000-000000000001',
-  'المدير العام',
-  'odaisayedissa@gmail.com',
-  'odaisayedissa@gmail.com',
-  crypt('oday2003', gen_salt('bf')),
-  'platform_super_admin',
-  TRUE
-) ON CONFLICT (username) DO NOTHING;
+-- بعد تشغيل هذا الـ schema لأول مرة، أنشئ حساب platform_admin الأول يدوياً عبر:
+-- INSERT INTO platform_admins (id, full_name, username, email, password_hash, role, is_active)
+-- VALUES (gen_random_uuid(), 'اسمك', 'بريدك', 'بريدك', 
+--   crypt('كلمة_مرور_قوية_تختارها', gen_salt('bf')), 'platform_super_admin', TRUE);
+-- لا تُبقِ أي حساب افتراضي بكلمة مرور معروفة بالكود المصدري.
 
 -- 2. المستأجر التأسيسي الرئيسي (Main Tenant)
 INSERT INTO tenants (id, name_ar, name_en, email, phone, address, currency_ar, currency_en, tax_percent, service_percent, status, subscription_plan)
@@ -1331,17 +1299,11 @@ VALUES (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- 4. حساب مدير النظام داخل المطعم الرئيسي (Super Admin Employee)
-INSERT INTO employees (id, tenant_id, branch_id, name, email, username, password_hash, role, phone, salary, status)
-VALUES (
-  'e0000000-0000-0000-0000-000000000001',
-  'a0000000-0000-0000-0000-000000000001',
-  'b0000001-0000-0000-0000-000000000001',
-  'المدير العام',
-  'synasma9@gmail.com',
-  'synasma9',
-  crypt('Plmoknijb098.', gen_salt('bf')),
-  'super_admin',
-  '0500000000',
-  25000.00,
-  'active'
-) ON CONFLICT (id) DO NOTHING;
+-- لا تضف أي حساب افتراضي في جدول `employees` بدور `super_admin`.
+-- إدارة سوبر-أدمن المنصة الآن محصورة في جدول `platform_admins`.
+
+-- ملاحظة هامة بعد تعديل دوال قاعدة البيانات:
+-- ملاحظة: بعد أي تعديل على دوال قاعدة البيانات، يجب تنفيذ:
+-- NOTIFY pgrst, 'reload schema';
+-- أو الضغط على "Reload schema cache" من Supabase Dashboard > Settings > API
+-- وإلا ستستمر واجهة PostgREST بإرجاع 404 Not Found رغم وجود الدالة فعلياً.
