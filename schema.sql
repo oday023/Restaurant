@@ -48,7 +48,7 @@ DROP TABLE IF EXISTS tenants                 CASCADE;
 -- ============================================================
 --  1. TENANTS (المطاعم / العملاء SaaS)
 -- ============================================================
-CREATE TABLE tenants (
+CREATE TABLE IF NOT EXISTS tenants (
     id                UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     name_ar           VARCHAR(255)  NOT NULL,
     name_en           VARCHAR(255)  NOT NULL,
@@ -68,13 +68,13 @@ CREATE TABLE tenants (
     updated_at        TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_tenants_email  ON tenants(email);
-CREATE INDEX idx_tenants_status ON tenants(status);
+CREATE INDEX IF NOT EXISTS idx_tenants_email  ON tenants(email);
+CREATE INDEX IF NOT EXISTS idx_tenants_status ON tenants(status);
 
 -- ============================================================
 --  2. BRANCHES (الفروع)
 -- ============================================================
-CREATE TABLE branches (
+CREATE TABLE IF NOT EXISTS branches (
     id          UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id   UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name_ar     VARCHAR(255)  NOT NULL,
@@ -88,13 +88,13 @@ CREATE TABLE branches (
     updated_at  TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_branches_tenant ON branches(tenant_id);
-CREATE INDEX idx_branches_status ON branches(status);
+CREATE INDEX IF NOT EXISTS idx_branches_tenant ON branches(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_branches_status ON branches(status);
 
 -- ============================================================
 --  3. EMPLOYEES (الموظفون) — قبل halls لأن halls قد تحتاجه مستقبلاً
 -- ============================================================
-CREATE TABLE employees (
+CREATE TABLE IF NOT EXISTS employees (
     id                  UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id           UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     branch_id           UUID          NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
@@ -120,16 +120,16 @@ CREATE TABLE employees (
     UNIQUE (tenant_id, username)
 );
 
-CREATE INDEX idx_employees_tenant         ON employees(tenant_id);
-CREATE INDEX idx_employees_branch         ON employees(branch_id);
-CREATE INDEX idx_employees_role           ON employees(role);
-CREATE INDEX idx_employees_username       ON employees(tenant_id, username);
-CREATE INDEX idx_employees_auth_user_id   ON employees(auth_user_id);
+CREATE INDEX IF NOT EXISTS idx_employees_tenant         ON employees(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_employees_branch         ON employees(branch_id);
+CREATE INDEX IF NOT EXISTS idx_employees_role           ON employees(role);
+CREATE INDEX IF NOT EXISTS idx_employees_username       ON employees(tenant_id, username);
+CREATE INDEX IF NOT EXISTS idx_employees_auth_user_id   ON employees(auth_user_id);
 
 -- ============================================================
 --  3-B. LOGIN ATTEMPTS (قفل محاولات الدخول الفاشلة على مستوى السيرفر)
 -- ============================================================
-CREATE TABLE login_attempts (
+CREATE TABLE IF NOT EXISTS login_attempts (
     id             UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     username       TEXT          NOT NULL,
     ip_address     VARCHAR(45),
@@ -137,8 +137,8 @@ CREATE TABLE login_attempts (
     attempted_at   TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_login_attempts_username_time ON login_attempts(username, attempted_at DESC);
-CREATE INDEX idx_login_attempts_ip_time        ON login_attempts(ip_address, attempted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_username_time ON login_attempts(username, attempted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_ip_time        ON login_attempts(ip_address, attempted_at DESC);
 
 CREATE OR REPLACE FUNCTION public.check_login_attempt_lock(
     p_username text,
@@ -221,7 +221,7 @@ GRANT USAGE ON SCHEMA extensions TO postgres, anon, authenticated, service_role;
 --  4. ATTENDANCE RECORDS (سجلات الحضور والغياب)
 --     مُخرجة من JSONB داخل employees → جدول مستقل أفضل
 -- ============================================================
-CREATE TABLE attendance_records (
+CREATE TABLE IF NOT EXISTS attendance_records (
     id           UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     employee_id  UUID          NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
     tenant_id    UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -235,14 +235,14 @@ CREATE TABLE attendance_records (
     UNIQUE (employee_id, work_date)
 );
 
-CREATE INDEX idx_attendance_employee ON attendance_records(employee_id);
-CREATE INDEX idx_attendance_date     ON attendance_records(work_date);
-CREATE INDEX idx_attendance_tenant   ON attendance_records(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_employee ON attendance_records(employee_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_date     ON attendance_records(work_date);
+CREATE INDEX IF NOT EXISTS idx_attendance_tenant   ON attendance_records(tenant_id);
 
 -- ============================================================
 --  5. PAYROLL RECORDS (الرواتب والمستحقات)
 -- ============================================================
-CREATE TABLE payroll_records (
+CREATE TABLE IF NOT EXISTS payroll_records (
     id              UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id       UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     employee_id     UUID          NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
@@ -262,15 +262,15 @@ CREATE TABLE payroll_records (
     UNIQUE (employee_id, month)
 );
 
-CREATE INDEX idx_payroll_tenant   ON payroll_records(tenant_id);
-CREATE INDEX idx_payroll_employee ON payroll_records(employee_id);
-CREATE INDEX idx_payroll_month    ON payroll_records(month);
-CREATE INDEX idx_payroll_status   ON payroll_records(status);
+CREATE INDEX IF NOT EXISTS idx_payroll_tenant   ON payroll_records(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_payroll_employee ON payroll_records(employee_id);
+CREATE INDEX IF NOT EXISTS idx_payroll_month    ON payroll_records(month);
+CREATE INDEX IF NOT EXISTS idx_payroll_status   ON payroll_records(status);
 
 -- ============================================================
 --  6. HALLS (الصالات / الأقسام)
 -- ============================================================
-CREATE TABLE halls (
+CREATE TABLE IF NOT EXISTS halls (
     id          UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     branch_id   UUID          NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
     name_ar     VARCHAR(255)  NOT NULL,
@@ -278,12 +278,12 @@ CREATE TABLE halls (
     created_at  TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_halls_branch ON halls(branch_id);
+CREATE INDEX IF NOT EXISTS idx_halls_branch ON halls(branch_id);
 
 -- ============================================================
 --  7. TABLES (الطاولات)
 -- ============================================================
-CREATE TABLE tables (
+CREATE TABLE IF NOT EXISTS tables (
     id               UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     hall_id          UUID          NOT NULL REFERENCES halls(id) ON DELETE CASCADE,
     number           VARCHAR(50)   NOT NULL,
@@ -296,13 +296,13 @@ CREATE TABLE tables (
     updated_at       TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_tables_hall   ON tables(hall_id);
-CREATE INDEX idx_tables_status ON tables(status);
+CREATE INDEX IF NOT EXISTS idx_tables_hall   ON tables(hall_id);
+CREATE INDEX IF NOT EXISTS idx_tables_status ON tables(status);
 
 -- ============================================================
 --  8. CATEGORIES (تصنيفات القائمة)
 -- ============================================================
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id          UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id   UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name_ar     VARCHAR(255)  NOT NULL,
@@ -313,13 +313,13 @@ CREATE TABLE categories (
     created_at  TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_categories_tenant ON categories(tenant_id);
-CREATE INDEX idx_categories_active ON categories(tenant_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_categories_tenant ON categories(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_categories_active ON categories(tenant_id, is_active);
 
 -- ============================================================
 --  9. SUPPLIERS (الموردون)
 -- ============================================================
-CREATE TABLE suppliers (
+CREATE TABLE IF NOT EXISTS suppliers (
     id              UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id       UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name            VARCHAR(255)  NOT NULL,
@@ -330,12 +330,12 @@ CREATE TABLE suppliers (
     created_at      TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_suppliers_tenant ON suppliers(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_suppliers_tenant ON suppliers(tenant_id);
 
 -- ============================================================
 --  10. INGREDIENTS (المواد الخام / المخزون)
 -- ============================================================
-CREATE TABLE ingredients (
+CREATE TABLE IF NOT EXISTS ingredients (
     id              UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id       UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name_ar         VARCHAR(255)  NOT NULL,
@@ -350,16 +350,16 @@ CREATE TABLE ingredients (
     updated_at      TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_ingredients_tenant   ON ingredients(tenant_id);
-CREATE INDEX idx_ingredients_supplier ON ingredients(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_ingredients_tenant   ON ingredients(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ingredients_supplier ON ingredients(supplier_id);
 -- فهرس للتنبيهات: مواد دون الحد الأدنى
-CREATE INDEX idx_ingredients_low_stock ON ingredients(tenant_id)
+CREATE INDEX IF NOT EXISTS idx_ingredients_low_stock ON ingredients(tenant_id)
     WHERE stock <= min_stock;
 
 -- ============================================================
 --  11. MENU ITEMS (أصناف القائمة)
 -- ============================================================
-CREATE TABLE menu_items (
+CREATE TABLE IF NOT EXISTS menu_items (
     id              UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     category_id     UUID          NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     name_ar         VARCHAR(255)  NOT NULL,
@@ -373,17 +373,17 @@ CREATE TABLE menu_items (
     updated_at      TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_menu_items_category  ON menu_items(category_id);
-CREATE INDEX idx_menu_items_available ON menu_items(category_id, is_available);
+CREATE INDEX IF NOT EXISTS idx_menu_items_category  ON menu_items(category_id);
+CREATE INDEX IF NOT EXISTS idx_menu_items_available ON menu_items(category_id, is_available);
 -- تحسين: بحث سريع تقريبي بالاسم (عربي/إنجليزي) للقائمة، بدل LIKE '%...%' البطيء
-CREATE INDEX idx_menu_items_name_ar_trgm ON menu_items USING gin (name_ar gin_trgm_ops);
-CREATE INDEX idx_menu_items_name_en_trgm ON menu_items USING gin (name_en gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_menu_items_name_ar_trgm ON menu_items USING gin (name_ar gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_menu_items_name_en_trgm ON menu_items USING gin (name_en gin_trgm_ops);
 
 -- ============================================================
 --  12. MENU ITEM EXTRAS (الإضافات والمحسنات)
 --      مُخرجة من JSONB extras[] في MenuItem → جدول مستقل
 -- ============================================================
-CREATE TABLE menu_item_extras (
+CREATE TABLE IF NOT EXISTS menu_item_extras (
     id           UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     menu_item_id UUID          NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
     name_ar      VARCHAR(255)  NOT NULL,
@@ -393,24 +393,24 @@ CREATE TABLE menu_item_extras (
     sort_order   SMALLINT      DEFAULT 0
 );
 
-CREATE INDEX idx_extras_menu_item ON menu_item_extras(menu_item_id);
+CREATE INDEX IF NOT EXISTS idx_extras_menu_item ON menu_item_extras(menu_item_id);
 
 -- ============================================================
 --  13. MENU ITEM INGREDIENTS (وصفات المكونات — علاقة M2M)
 -- ============================================================
-CREATE TABLE menu_item_ingredients (
+CREATE TABLE IF NOT EXISTS menu_item_ingredients (
     menu_item_id      UUID          NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
     ingredient_id     UUID          NOT NULL REFERENCES ingredients(id) ON DELETE CASCADE,
     quantity_needed   DECIMAL(10,3) NOT NULL,   -- الكمية المُخصومة عند البيع
     PRIMARY KEY (menu_item_id, ingredient_id)
 );
 
-CREATE INDEX idx_mii_ingredient ON menu_item_ingredients(ingredient_id);
+CREATE INDEX IF NOT EXISTS idx_mii_ingredient ON menu_item_ingredients(ingredient_id);
 
 -- ============================================================
 --  14. CUSTOMERS CRM (عملاء الولاء والنقاط)
 -- ============================================================
-CREATE TABLE customers_crm (
+CREATE TABLE IF NOT EXISTS customers_crm (
     id            UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id     UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name          VARCHAR(255)  NOT NULL,
@@ -426,16 +426,16 @@ CREATE TABLE customers_crm (
     UNIQUE (tenant_id, phone)
 );
 
-CREATE INDEX idx_crm_tenant ON customers_crm(tenant_id);
-CREATE INDEX idx_crm_phone  ON customers_crm(tenant_id, phone);
-CREATE INDEX idx_crm_tier   ON customers_crm(tenant_id, loyalty_tier);
+CREATE INDEX IF NOT EXISTS idx_crm_tenant ON customers_crm(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_crm_phone  ON customers_crm(tenant_id, phone);
+CREATE INDEX IF NOT EXISTS idx_crm_tier   ON customers_crm(tenant_id, loyalty_tier);
 -- تحسين: بحث سريع تقريبي باسم العميل (لاستخدامه في شاشة الكاشير/CRM)
-CREATE INDEX idx_crm_name_trgm ON customers_crm USING gin (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_crm_name_trgm ON customers_crm USING gin (name gin_trgm_ops);
 
 -- ============================================================
 --  15. COUPONS (قسائم الخصم)
 -- ============================================================
-CREATE TABLE coupons (
+CREATE TABLE IF NOT EXISTS coupons (
     id                UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id         UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     code              VARCHAR(50)   NOT NULL,
@@ -448,13 +448,13 @@ CREATE TABLE coupons (
     UNIQUE (tenant_id, code)
 );
 
-CREATE INDEX idx_coupons_tenant ON coupons(tenant_id);
-CREATE INDEX idx_coupons_active ON coupons(tenant_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_coupons_tenant ON coupons(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_coupons_active ON coupons(tenant_id, is_active);
 
 -- ============================================================
 --  16. ORDERS (الطلبات)
 -- ============================================================
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     id                UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id         UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     branch_id         UUID          NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
@@ -485,14 +485,14 @@ CREATE TABLE orders (
     updated_at        TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_orders_tenant     ON orders(tenant_id);
-CREATE INDEX idx_orders_branch     ON orders(branch_id);
-CREATE INDEX idx_orders_status     ON orders(status);
-CREATE INDEX idx_orders_table      ON orders(table_id);
-CREATE INDEX idx_orders_cashier    ON orders(cashier_id);
-CREATE INDEX idx_orders_type       ON orders(type);
-CREATE INDEX idx_orders_created    ON orders(created_at DESC);
-CREATE INDEX idx_orders_payment    ON orders(tenant_id, payment_status);
+CREATE INDEX IF NOT EXISTS idx_orders_tenant     ON orders(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_orders_branch     ON orders(branch_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status     ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_table      ON orders(table_id);
+CREATE INDEX IF NOT EXISTS idx_orders_cashier    ON orders(cashier_id);
+CREATE INDEX IF NOT EXISTS idx_orders_type       ON orders(type);
+CREATE INDEX IF NOT EXISTS idx_orders_created    ON orders(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_payment    ON orders(tenant_id, payment_status);
 
 -- الآن نضيف FK للطاولة بعد إنشاء جدول orders
 ALTER TABLE tables
@@ -502,7 +502,7 @@ ALTER TABLE tables
 -- ============================================================
 --  17. ORDER ITEMS (تفاصيل الطلبات — snapshot محفوظ)
 -- ============================================================
-CREATE TABLE order_items (
+CREATE TABLE IF NOT EXISTS order_items (
     id               UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     order_id         UUID          NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     menu_item_id     UUID          REFERENCES menu_items(id) ON DELETE SET NULL,
@@ -519,13 +519,13 @@ CREATE TABLE order_items (
     created_at       TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_order_items_order     ON order_items(order_id);
-CREATE INDEX idx_order_items_menu_item ON order_items(menu_item_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_order     ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_menu_item ON order_items(menu_item_id);
 
 -- ============================================================
 --  18. FINANCIAL TRANSACTIONS (دفتر الحسابات العام)
 -- ============================================================
-CREATE TABLE financial_transactions (
+CREATE TABLE IF NOT EXISTS financial_transactions (
     id                   UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id            UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     branch_id            UUID          NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
@@ -542,11 +542,11 @@ CREATE TABLE financial_transactions (
     created_at           TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_transactions_tenant ON financial_transactions(tenant_id);
-CREATE INDEX idx_transactions_branch ON financial_transactions(branch_id);
-CREATE INDEX idx_transactions_type   ON financial_transactions(type);
-CREATE INDEX idx_transactions_date   ON financial_transactions(tenant_id, date DESC);
-CREATE INDEX idx_transactions_order  ON financial_transactions(reference_order_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_tenant ON financial_transactions(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_branch ON financial_transactions(branch_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_type   ON financial_transactions(type);
+CREATE INDEX IF NOT EXISTS idx_transactions_date   ON financial_transactions(tenant_id, date DESC);
+CREATE INDEX IF NOT EXISTS idx_transactions_order  ON financial_transactions(reference_order_id);
 
 -- ============================================================
 CREATE OR REPLACE FUNCTION fn_set_updated_at()
@@ -561,7 +561,7 @@ $$ LANGUAGE plpgsql;
 --        منفصل عن جدول employees لأنه ليس تابعاً لأي مطعم/tenant
 --        بل يدير المنصة بأكملها (كل المطاعم المشتركة).
 -- ============================================================
-CREATE TABLE platform_admins (
+CREATE TABLE IF NOT EXISTS platform_admins (
     id                     UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     full_name              VARCHAR(255)  NOT NULL,
     username               VARCHAR(100)  NOT NULL UNIQUE,
@@ -578,8 +578,8 @@ CREATE TABLE platform_admins (
     updated_at             TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_platform_admins_username ON platform_admins(username);
-CREATE INDEX idx_platform_admins_active   ON platform_admins(is_active);
+CREATE INDEX IF NOT EXISTS idx_platform_admins_username ON platform_admins(username);
+CREATE INDEX IF NOT EXISTS idx_platform_admins_active   ON platform_admins(is_active);
 
 CREATE TRIGGER trg_platform_admins_updated_at
     BEFORE UPDATE ON platform_admins FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
@@ -747,7 +747,7 @@ ALTER TABLE platform_admins ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 --  19-C. PLATFORM ADMIN LOGIN AUDIT (سجل محاولات دخول أدمن المنصة)
 -- ============================================================
-CREATE TABLE platform_admin_login_audit (
+CREATE TABLE IF NOT EXISTS platform_admin_login_audit (
     id             UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     admin_id       UUID          REFERENCES platform_admins(id) ON DELETE SET NULL,
     username_tried VARCHAR(100)  NOT NULL,
@@ -757,15 +757,15 @@ CREATE TABLE platform_admin_login_audit (
     created_at     TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_pa_login_audit_admin    ON platform_admin_login_audit(admin_id);
-CREATE INDEX idx_pa_login_audit_created  ON platform_admin_login_audit(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pa_login_audit_admin    ON platform_admin_login_audit(admin_id);
+CREATE INDEX IF NOT EXISTS idx_pa_login_audit_created  ON platform_admin_login_audit(created_at DESC);
 
 ALTER TABLE platform_admin_login_audit ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
 --  19. AUDIT LOGS (سجل التدقيق والأمان)
 -- ============================================================
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
     id            UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id     UUID          NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     employee_id   UUID          REFERENCES employees(id) ON DELETE SET NULL,
@@ -778,10 +778,10 @@ CREATE TABLE audit_logs (
     created_at    TIMESTAMPTZ   DEFAULT NOW()
 );
 
-CREATE INDEX idx_audit_tenant    ON audit_logs(tenant_id);
-CREATE INDEX idx_audit_employee  ON audit_logs(employee_id);
-CREATE INDEX idx_audit_created   ON audit_logs(tenant_id, created_at DESC);
-CREATE INDEX idx_audit_action    ON audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_tenant    ON audit_logs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_audit_employee  ON audit_logs(employee_id);
+CREATE INDEX IF NOT EXISTS idx_audit_created   ON audit_logs(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_action    ON audit_logs(action);
 
 -- ============================================================
 --  AUTO-UPDATE TRIGGER لـ updated_at
@@ -1030,6 +1030,31 @@ GRANT EXECUTE ON FUNCTION public.custom_access_token_hook TO supabase_auth_admin
 REVOKE EXECUTE ON FUNCTION public.custom_access_token_hook FROM authenticated, anon, public;
 
 -- Tenant isolation policies
+-- Ensure policies are dropped first so CREATE POLICY is idempotent
+DROP POLICY IF EXISTS rls_tenants ON tenants;
+DROP POLICY IF EXISTS rls_branches ON branches;
+DROP POLICY IF EXISTS rls_halls ON halls;
+DROP POLICY IF EXISTS rls_tables ON tables;
+DROP POLICY IF EXISTS rls_categories ON categories;
+DROP POLICY IF EXISTS rls_suppliers ON suppliers;
+DROP POLICY IF EXISTS rls_ingredients ON ingredients;
+DROP POLICY IF EXISTS rls_menu_items ON menu_items;
+DROP POLICY IF EXISTS rls_menu_item_extras ON menu_item_extras;
+DROP POLICY IF EXISTS rls_menu_item_ingredients ON menu_item_ingredients;
+DROP POLICY IF EXISTS rls_customers_crm ON customers_crm;
+DROP POLICY IF EXISTS rls_coupons ON coupons;
+DROP POLICY IF EXISTS rls_orders ON orders;
+DROP POLICY IF EXISTS rls_order_items ON order_items;
+DROP POLICY IF EXISTS rls_financial_transactions ON financial_transactions;
+DROP POLICY IF EXISTS rls_employees ON employees;
+DROP POLICY IF EXISTS rls_attendance ON attendance_records;
+DROP POLICY IF EXISTS rls_payroll ON payroll_records;
+DROP POLICY IF EXISTS rls_audit_logs ON audit_logs;
+DROP POLICY IF EXISTS rls_public_menu_items ON menu_items;
+DROP POLICY IF EXISTS rls_public_categories ON categories;
+DROP POLICY IF EXISTS rls_public_insert_orders ON orders;
+DROP POLICY IF EXISTS rls_public_insert_order_items ON order_items;
+
 CREATE POLICY rls_tenants ON tenants
     FOR ALL USING (id = current_tenant_id());
 
