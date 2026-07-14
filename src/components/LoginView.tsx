@@ -28,20 +28,13 @@ export default function LoginView({
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockoutTimeLeft, setLockoutTimeLeft] = useState(0);
 
   // Lockout countdown timer
   useEffect(() => {
     if (lockoutTimeLeft <= 0) return;
     const interval = setInterval(() => {
-      setLockoutTimeLeft(prev => {
-        if (prev <= 1) {
-          setFailedAttempts(0);
-          return 0;
-        }
-        return prev - 1;
-      });
+      setLockoutTimeLeft(prev => (prev <= 1 ? 0 : prev - 1));
     }, 1000);
     return () => clearInterval(interval);
   }, [lockoutTimeLeft]);
@@ -67,8 +60,20 @@ export default function LoginView({
       return;
     }
 
+    const normalizedUsername = username.trim().toLowerCase();
+    const lockStatus = await StorageService.getLoginLockStatus(normalizedUsername);
+    if (lockStatus.isLocked) {
+      setLockoutTimeLeft(lockStatus.lockoutSeconds || 60);
+      onAddNotification(
+        `النظام مقفل مؤقتاً! يرجى الانتظار ${lockStatus.lockoutSeconds || 60} ثانية.`,
+        `System locked! Please wait ${lockStatus.lockoutSeconds || 60} seconds.`,
+        'warning'
+      );
+      return;
+    }
+
     try {
-      const matched = await StorageService.login(username.trim(), password.trim());
+      const matched = await StorageService.login(normalizedUsername, password.trim());
 
       if (matched.status === 'suspended') {
         onAddNotification(
@@ -79,6 +84,7 @@ export default function LoginView({
         return;
       }
 
+      setLockoutTimeLeft(0);
       StorageService.addAuditLog(
         matched.tenantId || tenant.id,
         matched.username || 'unknown',
@@ -88,42 +94,30 @@ export default function LoginView({
       return;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Authentication failed';
+      const isLockoutError = /too many failed attempts|please wait/i.test(message);
+      const lockMatch = message.match(/(\d+)\s+seconds?/i);
+      const derivedLockSeconds = lockMatch ? Number(lockMatch[1]) : 0;
+      if (isLockoutError && derivedLockSeconds > 0) {
+        setLockoutTimeLeft(derivedLockSeconds);
+      }
+
       const isInvalidCredentials = /invalid username|invalid email|password/i.test(message);
-      const userMessageAr = isInvalidCredentials
-        ? 'اسم المستخدم أو كلمة المرور غير صحيحة. حاول مرة أخرى.'
-        : 'تعذر تسجيل الدخول حالياً. تحقق من اتصال الإنترنت وحاول مرة أخرى.';
-      const userMessageEn = isInvalidCredentials
-        ? 'Invalid username or password. Please try again.'
-        : 'Unable to sign in right now. Check your network and try again.';
+      const userMessageAr = isLockoutError
+        ? `تم قفل المحاولات مؤقتاً. يرجى الانتظار ${derivedLockSeconds || 60} ثانية.`
+        : isInvalidCredentials
+          ? 'اسم المستخدم أو كلمة المرور غير صحيحة. حاول مرة أخرى.'
+          : 'تعذر تسجيل الدخول حالياً. تحقق من اتصال الإنترنت وحاول مرة أخرى.';
+      const userMessageEn = isLockoutError
+        ? `Too many failed attempts. Please wait ${derivedLockSeconds || 60} seconds.`
+        : isInvalidCredentials
+          ? 'Invalid username or password. Please try again.'
+          : 'Unable to sign in right now. Check your network and try again.';
 
       onAddNotification(userMessageAr, userMessageEn, 'warning');
 
       if (import.meta.env.DEV) {
         console.warn('Login failed', message);
       }
-    }
-
-    const newFailed = failedAttempts + 1;
-    setFailedAttempts(newFailed);
-
-    if (newFailed >= 5) {
-      setLockoutTimeLeft(60);
-      StorageService.addAuditLog(
-        tenant.id,
-        username || 'guest',
-        `Account lockout triggered due to 5 failed login attempts`
-      );
-      onAddNotification(
-        'تم قفل النظام لحمايتك! تم حظر المحاولات لـ 60 ثانية بسبب تكرار الفشل.',
-        'Account locked for 60 seconds due to 5 consecutive failures.',
-        'warning'
-      );
-    } else {
-      onAddNotification(
-        `بيانات الدخول خاطئة! المحاولات المتبقية قبل القفل: ${5 - newFailed}`,
-        `Invalid credentials! Attempts remaining before lockout: ${5 - newFailed}`,
-        'warning'
-      );
     }
   };
 

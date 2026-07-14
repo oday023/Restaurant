@@ -126,10 +126,10 @@ export default function StaffView({ tenantId, language, onAddNotification, curre
       performanceRating: 5.0,
       status: 'active',
       username: usernameClean,
-      password: needsCredentials ? newEmpPassword.trim() : undefined
     };
 
-    await StorageService.saveEmployee(newEmp);
+    const createdEmployee = await StorageService.createEmployeeWithPassword(newEmp, needsCredentials ? newEmpPassword.trim() : undefined);
+    setEmployees(StorageService.getEmployees(tenantId));
     setEmployees(StorageService.getEmployees(tenantId));
     
     // Force payroll refresh to include new employee
@@ -630,8 +630,6 @@ export default function StaffView({ tenantId, language, onAddNotification, curre
                           <div className="mt-1.5 inline-flex items-center gap-1.5 bg-slate-950 border border-slate-900 p-2 rounded-xl text-[9px] text-slate-300">
                             <Key className="w-3 h-3 text-orange-500 shrink-0" />
                             <span>UN: <span className="text-orange-400 font-black">{emp.username}</span></span>
-                            <span className="text-slate-850">|</span>
-                            <span>PW: <span className="text-white font-mono">{emp.password || '---'}</span></span>
                           </div>
                         ) : (
                           <div className="mt-1.5 inline-flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-xl text-[9px] font-black uppercase text-amber-400">

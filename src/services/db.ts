@@ -363,7 +363,6 @@ const toEmployee = (row: Record<string, any>): Employee => ({
   performanceRating: Number(row.performance_rating ?? row.performanceRating ?? 5),
   status: (row.status || (row.is_active === false ? "suspended" : "active")) as "active" | "suspended",
   username: String(row.username || row.email || ""),
-  password: row.password || undefined,
 });
 
 const fromEmployee = (e: Employee): Record<string, any> => ({
@@ -490,6 +489,25 @@ const resourceMappers: Record<string, { toDto: (row: any) => any; fromDto: (dto:
   audit_logs: { toDto: toAuditLog, fromDto: (a: any) => a },
 };
 
+const safeReadColumnsByResource: Record<string, string> = {
+  tenants: 'id, name_ar, name_en, logo_url, email, phone, address, currency_ar, currency_en, tax_percent, service_percent, status, subscription_plan, created_at, updated_at',
+  branches: 'id, tenant_id, name_ar, name_en, city, address, phone, status, created_at, updated_at',
+  halls: 'id, branch_id, name_ar, name_en, created_at',
+  tables: 'id, hall_id, number, seats, status, qr_code_value, active_order_id, created_at, updated_at',
+  categories: 'id, tenant_id, name_ar, name_en, icon, is_active, sort_order, created_at',
+  ingredients: 'id, tenant_id, name_ar, name_en, stock, min_stock, unit_ar, unit_en, cost_per_unit, supplier_id, created_at, updated_at',
+  suppliers: 'id, tenant_id, name, contact_person, phone, email, address, created_at',
+  menu_items: 'id, category_id, name_ar, name_en, description_ar, description_en, price, image_url, is_available, created_at, updated_at',
+  orders: 'id, tenant_id, branch_id, table_id, hall_id, cashier_id, waiter_id, customer_crm_id, coupon_id, type, status, subtotal, tax_amount, service_amount, discount_amount, total, customer_name, customer_phone, delivery_address, payment_method, payment_status, notes, created_at, updated_at',
+  financial_transactions: 'id, tenant_id, branch_id, type, category_ar, category_en, amount, description_ar, description_en, date, reference_order_id, created_by, created_at',
+  employees: 'id, tenant_id, branch_id, name, email, username, role, phone, salary, attendance_history, performance_rating, status, created_at, updated_at',
+  customers_crm: 'id, tenant_id, name, phone, email, points, loyalty_tier, orders_count, total_spent, created_at, updated_at',
+  coupons: 'id, tenant_id, code, discount_percent, max_discount, min_order_value, expiry_date, is_active, created_at',
+  payroll_records: 'id, tenant_id, employee_id, employee_name, role, month, base_salary, advances, deductions, bonuses, net_paid, status, paid_at, updated_at',
+  audit_logs: 'id, tenant_id, employee_id, username, action, before_value, after_value, ip_address, user_agent, created_at',
+  platform_admins: 'id, full_name, username, email, role, is_active, failed_login_attempts, locked_until, last_login_at, last_login_ip, created_at, updated_at',
+};
+
 // Pure Supabase Backend-as-a-Service Repository
 export class StorageService {
   private static bootstrapPromise: Promise<void> | null = null;
@@ -498,7 +516,8 @@ export class StorageService {
   private static async readFromApi<T>(resource: string, fallback?: T): Promise<T> {
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data, error } = await supabase.from(resource).select("*");
+        const selectColumns = safeReadColumnsByResource[resource] || 'id';
+        const { data, error } = await supabase.from(resource).select(selectColumns);
         if (!error && data) {
           const mapper = resourceMappers[resource]?.toDto || ((x: any) => x);
           return data.map(mapper) as T;
@@ -561,6 +580,83 @@ export class StorageService {
     return window.localStorage.getItem("restohub_token");
   }
 
+  private static getClientIpAddress(): string {
+    if (typeof window === "undefined") {
+      return (import.meta as ImportMeta & { env?: { VITE_CLIENT_IP?: string } }).env?.VITE_CLIENT_IP || "unknown";
+    }
+    return (import.meta as ImportMeta & { env?: { VITE_CLIENT_IP?: string } }).env?.VITE_CLIENT_IP || window.location.hostname || "unknown";
+  }
+
+  private static getEdgeFunctionUrl(): string | null {
+    const supabaseUrl = (import.meta as ImportMeta & { env?: { VITE_SUPABASE_URL?: string } }).env?.VITE_SUPABASE_URL || '';
+    if (!supabaseUrl.trim()) {
+      return null;
+    }
+
+    try {
+      const url = new URL(supabaseUrl);
+      const host = url.hostname.replace(/\.supabase\.co$/i, '.functions.supabase.co');
+      return `https://${host}/mint-session`;
+    } catch {
+      return null;
+    }
+  }
+
+  private static async mintSupabaseSession(username: string, password: string): Promise<{ ok: boolean; email?: string; authUserId?: string }> {
+    const edgeFunctionUrl = this.getEdgeFunctionUrl();
+    if (!edgeFunctionUrl) {
+      return { ok: false };
+    }
+
+    try {
+      const response = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || 'Unable to mint the Supabase session.');
+      }
+
+      const payload = (await response.json()) as { ok?: boolean; email?: string; authUserId?: string };
+      return { ok: Boolean(payload.ok), email: payload.email, authUserId: payload.authUserId };
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        console.warn('Supabase edge session mint failed:', err);
+      }
+      return { ok: false };
+    }
+  }
+
+  private static createSessionToken(payload: Record<string, unknown>): string {
+    const encodeSegment = (value: unknown) => {
+      const json = JSON.stringify(value);
+      const bytes = new TextEncoder().encode(json);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i += 1) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    };
+
+    const header = encodeSegment({ alg: "HS256", typ: "JWT" });
+    const body = encodeSegment(payload);
+    const secret = (import.meta as ImportMeta & { env?: { VITE_JWT_SECRET?: string } }).env?.VITE_JWT_SECRET || "restohub-dev-secret";
+    const signature = encodeSegment(`${header}.${body}.${secret}`);
+    return `${header}.${body}.${signature}`;
+  }
+
+  private static persistSessionToken(payload: Record<string, unknown>) {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const token = this.createSessionToken(payload);
+    window.localStorage.setItem("restohub_token", token);
+    window.localStorage.setItem("restohub_session", JSON.stringify(payload));
+  }
+
   public static async restoreSession(): Promise<Employee | null> {
     if (isSupabaseConfigured && supabase) {
       try {
@@ -617,16 +713,137 @@ export class StorageService {
     }
   }
 
-  public static async login(username: string, password: string): Promise<Employee> {
+  public static async getLoginLockStatus(username: string): Promise<{ isLocked: boolean; attemptsCount: number; lockoutSeconds: number; lockedUntil: string | null }> {
     if (isSupabaseConfigured && supabase) {
       try {
-        let loginEmail = username;
+        const { data, error } = await supabase.rpc('check_login_attempt_lock', {
+          p_username: username.trim().toLowerCase(),
+          p_ip_address: this.getClientIpAddress(),
+        });
 
-        if (!username.includes('@')) {
+        if (!error && data) {
+          const row = Array.isArray(data) ? data[0] : data;
+          return {
+            isLocked: row?.is_allowed === false,
+            attemptsCount: Number(row?.attempts_count || 0),
+            lockoutSeconds: Number(row?.lockout_seconds || 0),
+            lockedUntil: row?.locked_until || null,
+          };
+        }
+      } catch (err) {
+        if (import.meta.env.DEV) {
+          console.warn('Login lock check failed:', err);
+        }
+      }
+    }
+
+    return { isLocked: false, attemptsCount: 0, lockoutSeconds: 0, lockedUntil: null };
+  }
+
+  public static async recordLoginAttempt(username: string, success: boolean): Promise<{ isLocked: boolean; attemptsCount: number; lockoutSeconds: number; lockedUntil: string | null }> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.rpc('record_login_attempt', {
+          p_username: username.trim().toLowerCase(),
+          p_ip_address: this.getClientIpAddress(),
+          p_success: success,
+        });
+
+        if (!error && data) {
+          const row = Array.isArray(data) ? data[0] : data;
+          return {
+            isLocked: row?.is_allowed === false,
+            attemptsCount: Number(row?.attempts_count || 0),
+            lockoutSeconds: Number(row?.lockout_seconds || 0),
+            lockedUntil: row?.locked_until || null,
+          };
+        }
+      } catch (err) {
+        if (import.meta.env.DEV) {
+          console.warn('Login attempt recording failed:', err);
+        }
+      }
+    }
+
+    return { isLocked: false, attemptsCount: 0, lockoutSeconds: 0, lockedUntil: null };
+  }
+
+  public static async login(username: string, password: string): Promise<Employee> {
+    const normalizedUsername = username.trim().toLowerCase();
+    const lockStatus = await this.getLoginLockStatus(normalizedUsername);
+    if (lockStatus.isLocked) {
+      throw new Error(`Too many failed attempts. Please wait ${lockStatus.lockoutSeconds} seconds.`);
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.rpc('verify_employee_login', {
+          p_username: normalizedUsername,
+          p_password: password,
+        });
+
+        if (error) {
+          const failedLockStatus = await this.recordLoginAttempt(normalizedUsername, false);
+          if (failedLockStatus.isLocked) {
+            throw new Error(`Too many failed attempts. Please wait ${failedLockStatus.lockoutSeconds} seconds.`);
+          }
+          throw new Error(error.message || 'Invalid username or password.');
+        }
+
+        const employeeRow = Array.isArray(data) ? data[0] : data;
+        if (employeeRow) {
+          const emp = toEmployee(employeeRow);
+          await this.recordLoginAttempt(normalizedUsername, true);
+
+          const minted = await this.mintSupabaseSession(normalizedUsername, password);
+          if (minted.ok && minted.email) {
+            const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: minted.email,
+              password,
+            });
+            if (signInError) {
+              throw new Error(signInError.message || 'Unable to create a real Supabase session.');
+            }
+            if (!authData.session) {
+              throw new Error('Supabase did not return a valid signed session.');
+            }
+          }
+
+          this.set('employees', [emp]);
+          this.persistSessionToken({
+            sub: emp.id,
+            email: emp.email,
+            role: emp.role,
+            username: emp.username || emp.email,
+            tenant_id: emp.tenantId,
+            jwt_tenant_id: emp.tenantId,
+          });
+          await this.loadProtectedData(emp);
+          return emp;
+        }
+
+        const failedLockStatus = await this.recordLoginAttempt(normalizedUsername, false);
+        if (failedLockStatus.isLocked) {
+          throw new Error(`Too many failed attempts. Please wait ${failedLockStatus.lockoutSeconds} seconds.`);
+        }
+        throw new Error('Invalid username or password.');
+      } catch (err) {
+        if (import.meta.env.DEV) {
+          console.warn('RPC employee login failed, falling back to Supabase auth:', err);
+        }
+        if (err instanceof Error && err.message.includes('Too many failed attempts')) {
+          throw err;
+        }
+      }
+
+      try {
+        let loginEmail = normalizedUsername;
+
+        if (!normalizedUsername.includes('@')) {
           const { data: employeeMatch, error: lookupError } = await supabase
             .from('employees')
             .select('email')
-            .or(`username.eq.${username},email.eq.${username}`)
+            .or(`username.eq.${normalizedUsername},email.eq.${normalizedUsername}`)
             .limit(1)
             .single();
 
@@ -641,36 +858,57 @@ export class StorageService {
         });
 
         if (authError) {
+          const failedLockStatus = await this.recordLoginAttempt(normalizedUsername, false);
+          if (failedLockStatus.isLocked) {
+            throw new Error(`Too many failed attempts. Please wait ${failedLockStatus.lockoutSeconds} seconds.`);
+          }
           throw new Error(authError.message || 'Invalid username or password.');
         }
 
         if (authData?.user) {
           const { data: empData, error: empError } = await supabase
             .from('employees')
-            .select('*')
-            .or(`username.eq.${username},email.eq.${loginEmail}`)
+            .select('id, tenant_id, branch_id, name, email, username, role, phone, salary, attendance_history, performance_rating, status, created_at, updated_at')
+            .or(`username.eq.${normalizedUsername},email.eq.${loginEmail}`)
             .limit(1)
             .single();
 
           if (empError) {
+            const failedLockStatus = await this.recordLoginAttempt(normalizedUsername, false);
+            if (failedLockStatus.isLocked) {
+              throw new Error(`Too many failed attempts. Please wait ${failedLockStatus.lockoutSeconds} seconds.`);
+            }
             throw new Error(empError.message || 'Unable to load employee profile.');
           }
 
           if (empData) {
             const emp = toEmployee(empData);
+            await this.recordLoginAttempt(normalizedUsername, true);
             this.set('employees', [emp]);
-            if (typeof window !== 'undefined' && authData.session?.access_token) {
-              window.localStorage.setItem('restohub_token', authData.session.access_token);
-            }
+            this.persistSessionToken({
+              sub: emp.id,
+              email: emp.email,
+              role: emp.role,
+              username: emp.username || emp.email,
+              tenant_id: emp.tenantId,
+              jwt_tenant_id: emp.tenantId,
+            });
             await this.loadProtectedData(emp);
             return emp;
           }
         }
 
+        const failedLockStatus = await this.recordLoginAttempt(normalizedUsername, false);
+        if (failedLockStatus.isLocked) {
+          throw new Error(`Too many failed attempts. Please wait ${failedLockStatus.lockoutSeconds} seconds.`);
+        }
         throw new Error('Invalid username or password.');
       } catch (err) {
         if (import.meta.env.DEV) {
           console.warn('Supabase auth login failed:', err);
+        }
+        if (err instanceof Error && err.message.includes('Too many failed attempts')) {
+          throw err;
         }
         throw err instanceof Error ? err : new Error('Invalid username or password.');
       }
@@ -694,11 +932,51 @@ export class StorageService {
     }
 
     this.set("employees", [matched]);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("restohub_token", "demo_token_" + matched.id);
-    }
+    this.persistSessionToken({
+      sub: matched.id,
+      email: matched.email,
+      role: matched.role,
+      username: matched.username || matched.email,
+      tenant_id: matched.tenantId,
+      jwt_tenant_id: matched.tenantId,
+    });
     await this.loadProtectedData(matched);
     return matched;
+  }
+
+  public static async loginPlatformAdmin(username: string, password: string): Promise<Record<string, unknown>> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.rpc('verify_platform_admin_login', {
+          p_username: username,
+          p_password: password,
+        });
+
+        if (error) {
+          throw new Error(error.message || 'Invalid platform admin credentials.');
+        }
+
+        const adminRow = Array.isArray(data) ? data[0] : data;
+        if (adminRow) {
+          this.persistSessionToken({
+            sub: adminRow.id,
+            email: adminRow.email,
+            role: adminRow.role,
+            username: adminRow.username,
+            tenant_id: null,
+            jwt_tenant_id: null,
+          });
+          return adminRow as Record<string, unknown>;
+        }
+      } catch (err) {
+        if (import.meta.env.DEV) {
+          console.warn('Platform admin RPC login failed:', err);
+        }
+        throw err instanceof Error ? err : new Error('Invalid platform admin credentials.');
+      }
+    }
+
+    throw new Error('Platform admin login is unavailable without the RPC function.');
   }
 
   public static async logout() {
@@ -714,6 +992,7 @@ export class StorageService {
 
     if (typeof window !== "undefined") {
       window.localStorage.removeItem("restohub_token");
+      window.localStorage.removeItem("restohub_session");
     }
   }
 
@@ -1007,6 +1286,52 @@ export class StorageService {
     if (idx >= 0) list[idx] = saved;
     else list.push(saved);
     this.set('menu_items', list);
+    return saved;
+  }
+
+  public static async createEmployeeWithPassword(emp: Employee, password?: string): Promise<Employee> {
+    if (isSupabaseConfigured && supabase && password) {
+      try {
+        const { data, error } = await supabase.rpc('create_employee_with_password', {
+          p_tenant_id: emp.tenantId,
+          p_branch_id: emp.branchId,
+          p_name: emp.name,
+          p_email: emp.email,
+          p_username: emp.username ?? null,
+          p_password: password,
+          p_role: emp.role,
+          p_phone: emp.phone,
+          p_salary: emp.salary,
+          p_performance_rating: emp.performanceRating,
+          p_status: emp.status,
+        });
+
+        if (!error && data) {
+          const created = toEmployee(Array.isArray(data) ? data[0] : data);
+          const list = this.getEmployees();
+          const idx = list.findIndex((item) => item.id === created.id);
+          if (idx >= 0) list[idx] = created;
+          else list.push(created);
+          this.set('employees', list);
+          await this.addAuditLog(created.tenantId, 'system', `Created Employee via RPC #${created.name} (${created.role})`, null, created);
+          return created;
+        }
+
+        if (error) {
+          console.warn('create_employee_with_password RPC failed:', error.message);
+        }
+      } catch (err) {
+        console.warn('create_employee_with_password RPC error:', err);
+      }
+    }
+
+    const saved = await this.writeToApi('employees', emp, emp);
+    const list = this.getEmployees();
+    const idx = list.findIndex((item) => item.id === saved.id);
+    if (idx >= 0) list[idx] = saved;
+    else list.push(saved);
+    this.set('employees', list);
+    await this.addAuditLog(saved.tenantId, 'system', `Created Employee #${saved.name} (${saved.role})`, null, saved);
     return saved;
   }
 

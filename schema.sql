@@ -126,6 +126,94 @@ CREATE INDEX idx_employees_username       ON employees(tenant_id, username);
 CREATE INDEX idx_employees_auth_user_id   ON employees(auth_user_id);
 
 -- ============================================================
+--  3-B. LOGIN ATTEMPTS (قفل محاولات الدخول الفاشلة على مستوى السيرفر)
+-- ============================================================
+CREATE TABLE login_attempts (
+    id             UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
+    username       TEXT          NOT NULL,
+    ip_address     VARCHAR(45),
+    success        BOOLEAN       NOT NULL DEFAULT FALSE,
+    attempted_at   TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_login_attempts_username_time ON login_attempts(username, attempted_at DESC);
+CREATE INDEX idx_login_attempts_ip_time        ON login_attempts(ip_address, attempted_at DESC);
+
+CREATE OR REPLACE FUNCTION public.check_login_attempt_lock(
+    p_username text,
+    p_ip_address text DEFAULT 'unknown'
+)
+RETURNS TABLE (
+    is_allowed boolean,
+    attempts_count integer,
+    lockout_seconds integer,
+    locked_until timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_recent_count integer;
+    v_last_failure timestamptz;
+    v_locked_until timestamptz;
+BEGIN
+    DELETE FROM public.login_attempts
+    WHERE attempted_at < NOW() - INTERVAL '60 seconds';
+
+    SELECT COUNT(*), MAX(attempted_at)
+    INTO v_recent_count, v_last_failure
+    FROM public.login_attempts
+    WHERE lower(username) = lower(p_username)
+      AND success = FALSE
+      AND attempted_at >= NOW() - INTERVAL '60 seconds';
+
+    IF COALESCE(v_recent_count, 0) >= 5 THEN
+        v_locked_until := v_last_failure + INTERVAL '60 seconds';
+        RETURN QUERY
+        SELECT FALSE,
+               v_recent_count,
+               GREATEST(0, EXTRACT(EPOCH FROM (v_locked_until - NOW()))::integer),
+               v_locked_until;
+        RETURN;
+    END IF;
+
+    RETURN QUERY
+    SELECT TRUE,
+           COALESCE(v_recent_count, 0),
+           0,
+           NULL::timestamptz;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.record_login_attempt(
+    p_username text,
+    p_ip_address text DEFAULT 'unknown',
+    p_success boolean DEFAULT FALSE
+)
+RETURNS TABLE (
+    is_allowed boolean,
+    attempts_count integer,
+    lockout_seconds integer,
+    locked_until timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    INSERT INTO public.login_attempts (username, ip_address, success, attempted_at)
+    VALUES (lower(p_username), p_ip_address, p_success, NOW());
+
+    RETURN QUERY
+    SELECT * FROM public.check_login_attempt_lock(p_username, p_ip_address);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.check_login_attempt_lock(text, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.record_login_attempt(text, text, boolean) TO anon, authenticated;
+
+-- ============================================================
 --  4. ATTENDANCE RECORDS (سجلات الحضور والغياب)
 --     مُخرجة من JSONB داخل employees → جدول مستقل أفضل
 -- ============================================================
@@ -491,6 +579,193 @@ CREATE INDEX idx_platform_admins_active   ON platform_admins(is_active);
 
 CREATE TRIGGER trg_platform_admins_updated_at
     BEFORE UPDATE ON platform_admins FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
+
+CREATE OR REPLACE FUNCTION public.create_employee_with_password(
+    p_tenant_id uuid,
+    p_branch_id uuid,
+    p_name text,
+    p_email text,
+    p_username text,
+    p_password text,
+    p_role text,
+    p_phone text,
+    p_salary numeric,
+    p_performance_rating numeric,
+    p_status text
+)
+RETURNS TABLE (
+    id uuid,
+    tenant_id uuid,
+    branch_id uuid,
+    name text,
+    email text,
+    username text,
+    role text,
+    phone text,
+    salary numeric,
+    performance_rating numeric,
+    status text,
+    created_at timestamptz,
+    updated_at timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_employee_id uuid;
+BEGIN
+    INSERT INTO public.employees (
+        tenant_id,
+        branch_id,
+        name,
+        email,
+        username,
+        password_hash,
+        role,
+        phone,
+        salary,
+        performance_rating,
+        status
+    ) VALUES (
+        p_tenant_id,
+        p_branch_id,
+        p_name,
+        p_email,
+        p_username,
+        crypt(p_password, gen_salt('bf')),
+        p_role,
+        p_phone,
+        COALESCE(p_salary, 0),
+        COALESCE(p_performance_rating, 5),
+        COALESCE(p_status, 'active')
+    ) RETURNING id INTO v_employee_id;
+
+    RETURN QUERY
+    SELECT e.id,
+           e.tenant_id,
+           e.branch_id,
+           e.name,
+           e.email,
+           e.username,
+           e.role,
+           e.phone,
+           e.salary,
+           e.performance_rating,
+           e.status,
+           e.created_at,
+           e.updated_at
+    FROM public.employees e
+    WHERE e.id = v_employee_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.create_employee_with_password(uuid, uuid, text, text, text, text, text, text, numeric, numeric, text) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.verify_employee_login(p_username text, p_password text)
+RETURNS TABLE (
+    id uuid,
+    tenant_id uuid,
+    branch_id uuid,
+    name text,
+    email text,
+    username text,
+    role text,
+    phone text,
+    salary numeric,
+    performance_rating numeric,
+    status text,
+    created_at timestamptz,
+    updated_at timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_employee RECORD;
+BEGIN
+    SELECT e.id, e.tenant_id, e.branch_id, e.name, e.email, e.username, e.role, e.phone,
+           e.salary, e.performance_rating, e.status, e.created_at, e.updated_at
+    INTO v_employee
+    FROM public.employees e
+    WHERE e.status = 'active'
+      AND (e.username = p_username OR e.email = p_username)
+      AND e.password_hash IS NOT NULL
+      AND crypt(p_password, e.password_hash) = e.password_hash
+    ORDER BY e.created_at DESC
+    LIMIT 1;
+
+    IF v_employee IS NULL THEN
+        RETURN;
+    END IF;
+
+    RETURN QUERY
+    SELECT v_employee.id,
+           v_employee.tenant_id,
+           v_employee.branch_id,
+           v_employee.name,
+           v_employee.email,
+           v_employee.username,
+           v_employee.role,
+           v_employee.phone,
+           v_employee.salary,
+           v_employee.performance_rating,
+           v_employee.status,
+           v_employee.created_at,
+           v_employee.updated_at;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.verify_platform_admin_login(p_username text, p_password text)
+RETURNS TABLE (
+    id uuid,
+    full_name text,
+    username text,
+    email text,
+    role text,
+    is_active boolean,
+    last_login_at timestamptz,
+    created_at timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_admin RECORD;
+BEGIN
+    SELECT pa.id, pa.full_name, pa.username, pa.email, pa.role, pa.is_active, pa.last_login_at, pa.created_at
+    INTO v_admin
+    FROM public.platform_admins pa
+    WHERE pa.is_active = TRUE
+      AND (pa.username = p_username OR pa.email = p_username)
+      AND crypt(p_password, pa.password_hash) = pa.password_hash
+    ORDER BY pa.created_at DESC
+    LIMIT 1;
+
+    IF v_admin IS NULL THEN
+        RETURN;
+    END IF;
+
+    UPDATE public.platform_admins
+    SET last_login_at = NOW(), failed_login_attempts = 0
+    WHERE id = v_admin.id;
+
+    RETURN QUERY
+    SELECT v_admin.id,
+           v_admin.full_name,
+           v_admin.username,
+           v_admin.email,
+           v_admin.role,
+           v_admin.is_active,
+           v_admin.last_login_at,
+           v_admin.created_at;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.verify_employee_login(text, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.verify_platform_admin_login(text, text) TO anon, authenticated;
 
 -- تفعيل RLS دون أي Policy عامة: بذلك لا يقدر عليه سوى الاتصال
 -- بصلاحية service_role من الباك-إند فقط (وليس عبر anon/authenticated)
@@ -1012,6 +1287,8 @@ GROUP BY t.id;
 -- ============================================================
 
 -- 1. أدمن المنصة السيادي (SaaS Platform Super Admin)
+-- WARNING: This default super-admin seed is for initial setup only.
+-- Change the password immediately after the first production run via the platform admin UI or a direct password update command.
 INSERT INTO platform_admins (id, full_name, username, email, password_hash, role, is_active)
 VALUES (
   'c0000001-0000-0000-0000-000000000001',
