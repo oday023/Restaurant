@@ -658,12 +658,46 @@ export class StorageService {
   }
 
   public static async restoreSession(): Promise<Employee | null> {
+    if (typeof window !== "undefined") {
+      const storedSession = window.localStorage.getItem("restohub_session");
+      if (storedSession) {
+        try {
+          const payload = JSON.parse(storedSession) as Record<string, unknown>;
+          const employeeId = typeof payload.sub === "string" ? payload.sub : null;
+
+          if (employeeId && isSupabaseConfigured && supabase) {
+            const { data: empData, error: empError } = await supabase
+              .from("employees")
+              .select("id, tenant_id, branch_id, name, email, username, role, phone, salary, attendance_history, performance_rating, status, created_at, updated_at")
+              .eq("id", employeeId)
+              .maybeSingle();
+
+            if (!empError && empData) {
+              const emp = toEmployee(empData);
+              this.set("employees", [emp]);
+              await this.loadProtectedData(emp);
+              return emp;
+            }
+          }
+        } catch (err) {
+          if (import.meta.env.DEV) {
+            console.warn("Stored session restore failed:", err);
+          }
+        }
+      }
+    }
+
     if (isSupabaseConfigured && supabase) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user?.email) {
-          const { data: empData } = await supabase.from("employees").select("*").eq("email", session.user.email).single();
-          if (empData) {
+          const { data: empData, error: empError } = await supabase
+            .from("employees")
+            .select("id, tenant_id, branch_id, name, email, username, role, phone, salary, attendance_history, performance_rating, status, created_at, updated_at")
+            .eq("email", session.user.email)
+            .maybeSingle();
+
+          if (!empError && empData) {
             const emp = toEmployee(empData);
             this.set("employees", [emp]);
             await this.loadProtectedData(emp);
@@ -795,20 +829,6 @@ export class StorageService {
           const emp = toEmployee(employeeRow);
           await this.recordLoginAttempt(normalizedUsername, true);
 
-          const minted = await this.mintSupabaseSession(normalizedUsername, password);
-          if (minted.ok && minted.email) {
-            const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
-              email: minted.email,
-              password,
-            });
-            if (signInError) {
-              throw new Error(signInError.message || 'Unable to create a real Supabase session.');
-            }
-            if (!authData.session) {
-              throw new Error('Supabase did not return a valid signed session.');
-            }
-          }
-
           this.set('employees', [emp]);
           this.persistSessionToken({
             sub: emp.id,
@@ -829,83 +849,7 @@ export class StorageService {
         throw new Error('Invalid username or password.');
       } catch (err) {
         if (import.meta.env.DEV) {
-          console.warn('RPC employee login failed, falling back to Supabase auth:', err);
-        }
-        if (err instanceof Error && err.message.includes('Too many failed attempts')) {
-          throw err;
-        }
-      }
-
-      try {
-        let loginEmail = normalizedUsername;
-
-        if (!normalizedUsername.includes('@')) {
-          const { data: employeeMatch, error: lookupError } = await supabase
-            .from('employees')
-            .select('email')
-            .or(`username.eq.${normalizedUsername},email.eq.${normalizedUsername}`)
-            .limit(1)
-            .single();
-
-          if (!lookupError && employeeMatch?.email) {
-            loginEmail = employeeMatch.email;
-          }
-        }
-
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: loginEmail,
-          password,
-        });
-
-        if (authError) {
-          const failedLockStatus = await this.recordLoginAttempt(normalizedUsername, false);
-          if (failedLockStatus.isLocked) {
-            throw new Error(`Too many failed attempts. Please wait ${failedLockStatus.lockoutSeconds} seconds.`);
-          }
-          throw new Error(authError.message || 'Invalid username or password.');
-        }
-
-        if (authData?.user) {
-          const { data: empData, error: empError } = await supabase
-            .from('employees')
-            .select('id, tenant_id, branch_id, name, email, username, role, phone, salary, attendance_history, performance_rating, status, created_at, updated_at')
-            .or(`username.eq.${normalizedUsername},email.eq.${loginEmail}`)
-            .limit(1)
-            .single();
-
-          if (empError) {
-            const failedLockStatus = await this.recordLoginAttempt(normalizedUsername, false);
-            if (failedLockStatus.isLocked) {
-              throw new Error(`Too many failed attempts. Please wait ${failedLockStatus.lockoutSeconds} seconds.`);
-            }
-            throw new Error(empError.message || 'Unable to load employee profile.');
-          }
-
-          if (empData) {
-            const emp = toEmployee(empData);
-            await this.recordLoginAttempt(normalizedUsername, true);
-            this.set('employees', [emp]);
-            this.persistSessionToken({
-              sub: emp.id,
-              email: emp.email,
-              role: emp.role,
-              username: emp.username || emp.email,
-              tenant_id: emp.tenantId,
-              jwt_tenant_id: emp.tenantId,
-            });
-            await this.loadProtectedData(emp);
-            return emp;
-          }
-        }
-
-        const failedLockStatus = await this.recordLoginAttempt(normalizedUsername, false);
-        if (failedLockStatus.isLocked) {
-          throw new Error(`Too many failed attempts. Please wait ${failedLockStatus.lockoutSeconds} seconds.`);
-        }
-        throw new Error('Invalid username or password.');
-      } catch (err) {
-        if (import.meta.env.DEV) {
-          console.warn('Supabase auth login failed:', err);
+          console.warn('RPC employee login failed:', err);
         }
         if (err instanceof Error && err.message.includes('Too many failed attempts')) {
           throw err;
